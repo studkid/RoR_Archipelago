@@ -1,5 +1,6 @@
 require("apclient")
 require("prefs")
+require("utils")
 
 callback.register("onLoad", function(item)
     getItemPools(ItemPool.findAll()) 
