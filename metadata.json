@@ -1,0 +1,11 @@
+{
+    "name": "Archipelago Randomizer",
+    "description": "Adds support for archipelago multiorld to Risk of Rain",
+	"internalname": "APRando",
+    "version": "0.1",
+    "author": "studkid",
+	"mpcompat": false,
+	"dependencies": [
+
+	]
+}
