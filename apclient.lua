@@ -1,11 +1,13 @@
 local game_name = "Risk of Rain"
 local items_handling = 7
-local ap = nil
+local message_format = AP.RenderFormat.TEXT
+ap = nil
+
+local connected = false
 
 function connect(server, slot, password)
     function on_socket_connected()
         print("Socket connected")
-        local message_format = AP.RenderFormat.TEXT
     end
 
     function on_socket_error(msg)
@@ -14,6 +16,7 @@ function connect(server, slot, password)
 
     function on_socket_disconnected()
         print("Socket disconnected")
+        connected = false
     end
 
     function on_room_info()
@@ -24,6 +27,7 @@ function connect(server, slot, password)
     function on_slot_connected(slot_data)
         print("Slot connected")
         print(slot_data)
+        connected = true
         ap:Bounce({name="Risk of Rain"}, {game_name})
         local extra = {nonce = 123}  -- optional extra data will be in the server reply
         ap:Get({"counter"}, extra)
@@ -111,16 +115,15 @@ function connect(server, slot, password)
     ap:set_set_reply_handler(on_set_reply)
 end
 
-callback.register("onLoad", function(item)
-	connect("localhost", "Risk of Rain", "")
-    
-    print("Will run for 10 seconds ...")
-    local t0 = os.clock()
-    while os.clock() - t0 < 10 do
-        local ran, error = pcall(function () error({ap:poll()}) end)
-        if not ran then
-            print("ap:poll() failed to run: ", error)
-        end
+-- function collectItem(item)
+--     print(item)
+-- end    
+
+
+
+callback.register("onItemInit", function(item)
+    if connected then
+        -- print()
+	    player:removeItem(item)
     end
-    print("shutting down...");
-end)
+end) 
