@@ -1,9 +1,14 @@
+require("utils")
+
+local chests = { 'Chest1', 'Chest2', 'Chest3', 'Chest4', 'Chest5'}
+
 local game_name = "Risk of Rain"
 local items_handling = 7
 local message_format = AP.RenderFormat.TEXT
 ap = nil
 
 local connected = false
+local slotData = nil
 
 function connect(server, slot, password)
     function on_socket_connected()
@@ -24,22 +29,17 @@ function connect(server, slot, password)
         ap:ConnectSlot(slot, password, items_handling, {"Lua-APClientPP"}, {0, 4, 4})
     end
 
-    function on_slot_connected(slot_data)
+    function on_slot_connected(data)
         print("Slot connected")
-        print(slot_data)
+        slotData = data
+        print(data)
+        
+        curPlayerSlot = ap:get_player_number()
         connected = true
-        ap:Bounce({name="Risk of Rain"}, {game_name})
-        local extra = {nonce = 123}  -- optional extra data will be in the server reply
-        ap:Get({"counter"}, extra)
-        -- ap:Set("counter", 0, true, {{"add", 1}}, extra)
-        -- ap:Set("empty_array", nil, true, {{"replace", AP.EMPTY_ARRAY}})
-        ap:ConnectUpdate(nil, {"Lua-APClientPP"})
-        print("Players:")
-        local players = ap:get_players()
-        for _, player in ipairs(players) do
-            print("  " .. tostring(player.slot) .. ": " .. player.name ..
-                  " playing " .. ap:get_player_alias(player.slot))
-        end
+
+        print(slotData)
+
+        local missingLocations = {}
     end
 
     function on_slot_refused(reasons)
@@ -50,6 +50,7 @@ function connect(server, slot, password)
         print("Items received:")
         for _, item in ipairs(items) do
             print(item.item)
+            -- collectItem(item)
         end
     end
 
@@ -115,15 +116,39 @@ function connect(server, slot, password)
     ap:set_set_reply_handler(on_set_reply)
 end
 
--- function collectItem(item)
---     print(item)
--- end    
+callback.register("onLoad", function(item)
+    getItemPools(ItemPool.findAll()) 
 
+	connect(server, slot, password)
+end)
 
+callback.register("onStep", function()
+	if ap then
+        ap:poll() 
+    end
+end)
 
-callback.register("onItemInit", function(item)
+callback.register("onMapObjectActivate", function(mapObject, activator)
+    print(mapObject:getObject():getName())
     if connected then
-        -- print()
-	    player:removeItem(item)
+        object = mapObject:getObject():getName()
+
+
     end
 end) 
+
+local runStarted = false
+
+callback.register("onGameStart", function()
+	runStarted = true 
+end)
+
+local function contains(tab, val)
+    for index, value in ipairs(tab) do
+        if value = val then
+            return true
+        end
+    end
+    
+    return false
+end

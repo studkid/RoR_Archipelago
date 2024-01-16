@@ -3,6 +3,7 @@ local uncommon = nil
 local rare = nil
 local equipment = nil
 
+-- Registers every necessary itemPool
 function getItemPools(itemPools) 
     for i, pool in pairs(itemPools) do
         if pool:getName() == "common" then
@@ -21,4 +22,8 @@ function getItemPools(itemPools)
 			equipment = pool
 		end
     end
+end
+
+function collectItem(item)
+    print(item)
 end
