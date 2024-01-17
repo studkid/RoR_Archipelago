@@ -1,11 +1,16 @@
-require("utils")
-
 local chests = { 'Chest1', 'Chest2', 'Chest3', 'Chest4', 'Chest5'}
 
 local game_name = "Risk of Rain"
 local items_handling = 7
 local message_format = AP.RenderFormat.TEXT
 ap = nil
+
+local playerInst = nil
+local common = nil
+local uncommon = nil
+local rare = nil
+local equipment = nil
+local boss = nil
 
 local connected = false
 local slotData = nil
@@ -32,12 +37,14 @@ function connect(server, slot, password)
     function on_slot_connected(data)
         print("Slot connected")
         slotData = data
-        print(data)
+        -- print(data)
         
         curPlayerSlot = ap:get_player_number()
         connected = true
 
         print(slotData)
+        print(ap.checked_locations)
+        print(ap.missing_locations)
 
         local missingLocations = {}
     end
@@ -49,8 +56,33 @@ function connect(server, slot, password)
     function on_items_received(items)
         print("Items received:")
         for _, item in ipairs(items) do
-            print(item.item)
-            -- collectItem(item)
+            print(ap:get_item_name(item.item))
+
+            if playerInst == nil then
+                return
+            end
+
+	        if item.item == 250001 then
+		        playerInst:giveItem(common:roll())
+	        end
+	        if item.item == 250002 then
+		        playerInst:giveItem(uncommon:roll())
+	        end
+	        if item.item == 250003 then
+		        playerInst:giveItem(rare:roll())
+	        end
+	        if item.item == 250004 then
+                bossItem = boss:roll()
+
+                if bossItem.isUseItem then
+                    bossItem:create(playerInst.x, playerInst.y)
+                else 
+                    playerInst:giveItem(boss:roll())
+                end
+	        end
+            if item.item == 250005 then
+                equipment:roll():create(playerInst.x, playerInst.y)
+            end
         end
     end
 
@@ -116,10 +148,15 @@ function connect(server, slot, password)
     ap:set_set_reply_handler(on_set_reply)
 end
 
+
+
 callback.register("onLoad", function(item)
     getItemPools(ItemPool.findAll()) 
-
 	connect(server, slot, password)
+end)
+
+callback.register("onPlayerInit", function(playerInstance)
+    playerInst = playerInstance
 end)
 
 callback.register("onStep", function()
@@ -132,8 +169,12 @@ callback.register("onMapObjectActivate", function(mapObject, activator)
     print(mapObject:getObject():getName())
     if connected then
         object = mapObject:getObject():getName()
+        location = ap.missing_locations[1]
+        print(location)
 
-
+        if tableContains(chests, object) and not location == nil then
+            print(ap:get_location_name(location))
+        end
     end
 end) 
 
@@ -143,12 +184,42 @@ callback.register("onGameStart", function()
 	runStarted = true 
 end)
 
-local function contains(tab, val)
+function tableContains(tab, val)
     for index, value in ipairs(tab) do
-        if value = val then
+        if value == val then
             return true
         end
     end
     
     return false
+end
+
+-- Registers every necessary itemPool
+function getItemPools(itemPools) 
+    for i, pool in pairs(itemPools) do
+        if pool:getName() == "common" then
+			common = pool
+		end
+
+		if pool:getName() == "uncommon" then
+			uncommon = pool
+		end
+
+		if pool:getName() == "rare" then
+			rare = pool
+		end
+
+		if pool:getName() == "use" then
+			equipment = pool
+		end
+    end
+
+    boss = ItemPool.new("boss")
+    
+    boss:add(Item.find("ifrit's horn"))
+    boss:add(Item.find("Colossal Knurl"))
+    boss:add(Item.find("Nematocyst Nozzle"))
+    boss:add(Item.find("Burning Witness"))
+    boss:add(Item.find("Legendary Spark"))
+    boss:add(Item.find("Imp Overlord's Tentacle"))
 end
