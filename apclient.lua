@@ -19,6 +19,9 @@ local slotData = nil
 
 local itemsCollected = {}
 
+-----------------------------------------------------------------------
+-- AP Client Handling                                                --
+-----------------------------------------------------------------------
 function connect(server, slot, password)
     function on_socket_connected()
         print("Socket connected")
@@ -156,17 +159,22 @@ function connect(server, slot, password)
     ap:set_set_reply_handler(on_set_reply)
 end
 
+-----------------------------------------------------------------------
+-- Game Callbacks                                                    --
+-----------------------------------------------------------------------
 
-
+-- Runs on initial game load
 callback.register("onLoad", function(item)
     getItemPools(ItemPool.findAll()) 
 	connect(server, slot, password)
 end)
 
+-- Save the player instance to a local variable
 callback.register("onPlayerInit", function(playerInstance)
     playerInst = playerInstance
 end)
 
+-- Give player collected items between runs
 callback.register("onPlayerDraw", function(playerInstance)
     if not runStarted and connected then
         -- Would have this a seperate function but game locks up if run in on_items_recieved
@@ -195,12 +203,14 @@ callback.register("onPlayerDraw", function(playerInstance)
     end
 end)
 
+-- Runs poll() every game tick while in game
 callback.register("onStep", function()
 	if ap then
         ap:poll() 
     end
 end)
 
+-- Location checker (WIP)
 callback.register("onMapObjectActivate", function(mapObject, activator)
     print(mapObject:getObject():getName())
     if connected then
@@ -214,20 +224,11 @@ callback.register("onMapObjectActivate", function(mapObject, activator)
     end
 end) 
 
+-- Tracks when a current run ends
 callback.register("onGameEnd", function()
     runStarted = false
     playerInst = nil
 end)
-
-function tableContains(tab, val)
-    for index, value in ipairs(tab) do
-        if value == val then
-            return true
-        end
-    end
-    
-    return false
-end
 
 -- Registers every necessary itemPool
 function getItemPools(itemPools) 
