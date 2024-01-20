@@ -3,7 +3,7 @@ local chests = { 'Chest1', 'Chest2', 'Chest3', 'Chest4', 'Chest5'}
 local game_name = "Risk of Rain"
 local items_handling = 7
 local message_format = AP.RenderFormat.TEXT
-ap = nil
+local ap = nil
 
 local playerInst = nil
 local common = nil
@@ -13,7 +13,11 @@ local equipment = nil
 local boss = nil
 
 local connected = false
+local runStarted = false
+local skipItemSend = false
 local slotData = nil
+
+local itemsCollected = {}
 
 function connect(server, slot, password)
     function on_socket_connected()
@@ -27,6 +31,8 @@ function connect(server, slot, password)
     function on_socket_disconnected()
         print("Socket disconnected")
         connected = false
+        skipItemSend = true
+        itemsCollected = {}
     end
 
     function on_room_info()
@@ -37,7 +43,6 @@ function connect(server, slot, password)
     function on_slot_connected(data)
         print("Slot connected")
         slotData = data
-        -- print(data)
         
         curPlayerSlot = ap:get_player_number()
         connected = true
@@ -58,32 +63,35 @@ function connect(server, slot, password)
         for _, item in ipairs(items) do
             print(ap:get_item_name(item.item))
 
-            if playerInst == nil then
+            if playerInst == nil then -- Check if playerInst has been initialized
                 return
             end
 
-	        if item.item == 250001 then
+            if(skipItemSend) then
+                return
+            elseif item.item == 250001 then -- Common Item
 		        playerInst:giveItem(common:roll())
-	        end
-	        if item.item == 250002 then
+            elseif item.item == 250002 then -- Uncommon Item
 		        playerInst:giveItem(uncommon:roll())
-	        end
-	        if item.item == 250003 then
+	        elseif item.item == 250003 then -- Rare Item
 		        playerInst:giveItem(rare:roll())
-	        end
-	        if item.item == 250004 then
+	        elseif item.item == 250004 then -- Boss Item
                 bossItem = boss:roll()
 
                 if bossItem.isUseItem then
                     bossItem:create(playerInst.x, playerInst.y)
                 else 
-                    playerInst:giveItem(boss:roll())
+                    playerInst:giveItem(bossItem)
                 end
-	        end
-            if item.item == 250005 then
+            elseif item.item == 250005 then -- Equipment
                 equipment:roll():create(playerInst.x, playerInst.y)
             end
+
+            table.insert(itemsCollected, item)
         end
+
+        skipItemSend = false
+        runStarted = true
     end
 
     function on_location_info(items)
@@ -159,6 +167,34 @@ callback.register("onPlayerInit", function(playerInstance)
     playerInst = playerInstance
 end)
 
+callback.register("onPlayerDraw", function(playerInstance)
+    if not runStarted and connected then
+        -- Would have this a seperate function but game locks up if run in on_items_recieved
+        for _, item in ipairs(itemsCollected) do 
+
+            if item.item == 250001 then -- Common Item
+                playerInstance:giveItem(common:roll())
+            elseif item.item == 250002 then -- Uncommon Item
+                playerInstance:giveItem(uncommon:roll())
+            elseif item.item == 250003 then -- Rare Item
+                playerInstance:giveItem(rare:roll())
+            elseif item.item == 250004 then -- Boss Item
+                bossItem = boss:roll()
+
+                if bossItem.isUseItem then
+                    bossItem:create(playerInstance.x, playerInstance.y)
+                else 
+                    playerInstance:giveItem(bossItem)
+                end
+            elseif item.item == 250005 then -- Equipment
+                equipment:roll():create(playerInstance.x, playerInstance.y)
+            end
+        end
+
+        runStarted = true
+    end
+end)
+
 callback.register("onStep", function()
 	if ap then
         ap:poll() 
@@ -178,10 +214,9 @@ callback.register("onMapObjectActivate", function(mapObject, activator)
     end
 end) 
 
-local runStarted = false
-
-callback.register("onGameStart", function()
-	runStarted = true 
+callback.register("onGameEnd", function()
+    runStarted = false
+    playerInst = nil
 end)
 
 function tableContains(tab, val)
