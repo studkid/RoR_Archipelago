@@ -19,6 +19,7 @@ local slotData = nil
 
 local itemsCollected = {}
 local locationsMissing = {}
+local expQueue = 0
 
 -----------------------------------------------------------------------
 -- AP Client Handling                                                --
@@ -75,6 +76,7 @@ function connect(server, slot, password)
                 return
             end
 
+            -- Items
             if item.item == 250001 then -- Common Item
 		        playerInst:giveItem(common:roll())
             elseif item.item == 250002 then -- Uncommon Item
@@ -91,6 +93,17 @@ function connect(server, slot, password)
                 end
             elseif item.item == 250005 then -- Equipment
                 equipment:roll():create(playerInst.x, playerInst.y)
+
+            -- Fillers
+            elseif item.item == 250101 then -- Money
+                misc.hud:set("gold", misc.hud:get("gold") + (100 * Difficulty.getScaling(cost)))
+            elseif item.item == 250102 then -- Experience
+                local pAcc = playerInst:getAccessor()
+                expGiven = 1000
+                if expGiven > pAcc.maxexp then
+                    pAcc.expr = pAcc.maxexp
+                    expQueue = expGiven - pAcc.maxexp
+                end
             end
 
             table.insert(itemsCollected, item)
@@ -183,6 +196,7 @@ callback.register("onPlayerDraw", function(playerInstance)
         -- Would have this a seperate function but game locks up if run in on_items_recieved
         for _, item in ipairs(itemsCollected) do 
 
+            -- Items
             if item.item == 250001 then -- Common Item
                 playerInstance:giveItem(common:roll())
             elseif item.item == 250002 then -- Uncommon Item
@@ -199,10 +213,31 @@ callback.register("onPlayerDraw", function(playerInstance)
                 end
             elseif item.item == 250005 then -- Equipment
                 equipment:roll():create(playerInstance.x, playerInstance.y)
+            
+            -- Fillers
+            elseif item.item == 250101 then -- Money
+                misc.hud:set("gold", misc.hud:get("gold") + (100 * Difficulty.getScaling(cost)))
+            elseif item.item == 250102 then -- Experience
+                local pAcc = playerInst:getAccessor()
+                expGiven = 1000
+                if expGiven > pAcc.maxexp then
+                    pAcc.expr = pAcc.maxexp
+                    expQueue = expGiven - pAcc.maxexp
+                end
             end
         end
 
         runStarted = true
+    end
+end)
+
+-- Gives exp if reward exp exceeds needed for level up
+callback.register("onPlayerLevelUp", function(player)
+    local pAcc = playerInst:getAccessor()
+
+    if expQueue > 0 then
+        pAcc.expr = expQueue
+        expQueue = expQueue - pAcc.maxexp
     end
 end)
 
@@ -213,9 +248,9 @@ callback.register("onStep", function()
     end
 end)
 
--- Location checker (WIP)
+-- Location checker
 callback.register("onMapObjectActivate", function(mapObject, activator)
-    -- print(mapObject:getObject():getName())
+    print(mapObject:getObject():getName())
     if connected then
         locationsChecked = {}
         object = mapObject:getObject():getName()
