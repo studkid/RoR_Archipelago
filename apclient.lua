@@ -18,6 +18,7 @@ local skipItemSend = false
 local slotData = nil
 
 local itemsCollected = {}
+local locationsMissing = {}
 
 -----------------------------------------------------------------------
 -- AP Client Handling                                                --
@@ -52,9 +53,9 @@ function connect(server, slot, password)
 
         print(slotData)
         print(ap.checked_locations)
-        print(ap.missing_locations)
+        print(ap:get_location_name(ap.missing_locations[1]))
 
-        local missingLocations = {}
+        locationsMissing = ap.missing_locations
     end
 
     function on_slot_refused(reasons)
@@ -62,6 +63,10 @@ function connect(server, slot, password)
     end
 
     function on_items_received(items)
+        if(skipItemSend) then
+            return
+        end
+
         print("Items received:")
         for _, item in ipairs(items) do
             print(ap:get_item_name(item.item))
@@ -70,9 +75,7 @@ function connect(server, slot, password)
                 return
             end
 
-            if(skipItemSend) then
-                return
-            elseif item.item == 250001 then -- Common Item
+            if item.item == 250001 then -- Common Item
 		        playerInst:giveItem(common:roll())
             elseif item.item == 250002 then -- Uncommon Item
 		        playerInst:giveItem(uncommon:roll())
@@ -212,14 +215,16 @@ end)
 
 -- Location checker (WIP)
 callback.register("onMapObjectActivate", function(mapObject, activator)
-    print(mapObject:getObject():getName())
+    -- print(mapObject:getObject():getName())
     if connected then
+        locationsChecked = {}
         object = mapObject:getObject():getName()
-        location = ap.missing_locations[1]
-        print(location)
+        
 
-        if tableContains(chests, object) and not location == nil then
-            print(ap:get_location_name(location))
+        if arrayContains(chests, object) then
+            table.insert(locationsChecked, ap.missing_locations[1])
+            checked = ap:LocationChecks(locationsChecked)
+            print(checked)
         end
     end
 end) 
@@ -229,6 +234,19 @@ callback.register("onGameEnd", function()
     runStarted = false
     playerInst = nil
 end)
+
+-----------------------------------------------------------------------
+-- Helper functions                                                  --
+-----------------------------------------------------------------------
+
+-- Checks array for value
+function arrayContains(tab, val)
+    for _, value in ipairs(tab) do
+        if value == val then
+            return true
+        end
+    end
+end
 
 -- Registers every necessary itemPool
 function getItemPools(itemPools) 
