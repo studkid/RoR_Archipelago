@@ -19,6 +19,7 @@ local slotData = nil
 
 local itemsCollected = {}
 local locationsMissing = {}
+local trapQueue = {}
 local expQueue = 0
 
 -----------------------------------------------------------------------
@@ -104,6 +105,14 @@ function connect(server, slot, password)
                     pAcc.expr = pAcc.maxexp
                     expQueue = expGiven - pAcc.maxexp
                 end
+
+            -- Traps
+            elseif item.item == 250201 then -- Time Warp
+                misc.hud:set("gold", misc.hud:get("gold") + (100 * Difficulty.getScaling(cost)))
+            elseif item.item == 250202 then -- Combat
+                misc.hud:set("gold", misc.hud:get("gold") + (100 * Difficulty.getScaling(cost)))
+            elseif item.item == 250203 then -- Meteor
+                playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
             end
 
             table.insert(itemsCollected, item)
