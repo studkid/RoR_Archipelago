@@ -1,4 +1,4 @@
-local chests = { 'Chest1', 'Chest2', 'Chest3', 'Chest4', 'Chest5'}
+local chests = { 'Chest1', 'Chest2', 'Chest3', 'Chest5'}
 
 local game_name = "Risk of Rain"
 local items_handling = 7
@@ -135,10 +135,10 @@ function connect(server, slot, password)
     end
 
     function on_print_json(msg, extra)
-        print(ap:render_json(msg, message_format))
-        for key, value in pairs(extra) do
-            print("  " .. key .. ": " .. tostring(value))
-        end
+        -- print(ap:render_json(msg, message_format))
+        -- for key, value in pairs(extra) do
+        --     print("  " .. key .. ": " .. tostring(value))
+        -- end
     end
 
     function on_bounced(bounce)
@@ -258,11 +258,18 @@ callback.register("onMapObjectActivate", function(mapObject, activator)
 
         if arrayContains(chests, object) then
             table.insert(locationsChecked, ap.missing_locations[1])
-            checked = ap:LocationChecks(locationsChecked)
-            print(checked)
+            ap:LocationChecks(locationsChecked)
         end
     end
 end) 
+
+-- Check when providence dies
+callback.register("onNPCDeath", function(npc)
+    local killed = npc.getObject()
+    if killed:getName() == "Boss3" then
+        ap:LocationChecks({ap:get_item_id("Victory")})
+    end
+end)
 
 -- Tracks when a current run ends
 callback.register("onGameEnd", function()
