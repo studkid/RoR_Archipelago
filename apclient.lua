@@ -1,5 +1,9 @@
 local chests = { 'Chest1', 'Chest2', 'Chest3', 'Chest5'}
 
+local server = ""
+local slot = ""
+local password = ""
+
 local game_name = "Risk of Rain"
 local items_handling = 7
 local message_format = AP.RenderFormat.TEXT
@@ -54,10 +58,6 @@ function connect(server, slot, password)
         curPlayerSlot = ap:get_player_number()
         connected = true
 
-        print(slotData)
-        -- print(ap.checked_locations)
-        print(ap.missing_locations)
-
         locationsMissing = ap.missing_locations
     end
 
@@ -109,7 +109,7 @@ function connect(server, slot, password)
             -- Traps
             elseif item.item == 250201 then -- Time Warp
                 misc.hud:set("minute", misc.hud:get("minute") + 5)
-                misc.director:set("enemy_buff", misc.director:get("enemy_buff") + (scale * 5))
+                misc.director:set("enemy_buff", misc.director:get("enemy_buff") + (Difficulty.getActive().scale * 5))
             elseif item.item == 250202 and runStarted then -- Combat
                 combatQueue = combatQueue + 5
             elseif item.item == 250203 and runStarted then -- Meteor
@@ -196,6 +196,29 @@ end
 -- Runs on initial game load
 callback.register("onLoad", function(item)
     getItemPools(ItemPool.findAll()) 
+
+    local flags = modloader.getFlags()
+    for _, flag in ipairs(flags) do
+        if string.find(flag, "ap_server_") then
+            local s = string.gsub(flag, "ap_server_", "")
+            if type(s) == "string" then
+                server = s
+            end
+
+        elseif string.find(flag, "ap_slot_") then
+            local s = string.gsub(flag, "ap_slot_", "")
+            if type(s) == "string" then
+                slot = s
+            end
+
+        elseif string.find(flag, "ap_password_") then
+            local s = string.gsub(flag, "ap_password_", "")
+            if type(s) == "string" then
+                password = s
+            end
+        end
+    end
+    
 	connect(server, slot, password)
 end)
 
@@ -243,7 +266,7 @@ callback.register("onPlayerDraw", function(playerInstance)
             -- Traps
             elseif item.item == 250201 then -- Time Warp
                 misc.hud:set("minute", misc.hud:get("minute") + 5)
-                misc.director:set("enemy_buff", misc.director:get("enemy_buff") + (scale * 5))
+                misc.director:set("enemy_buff", misc.director:get("enemy_buff") + (Difficulty.getActive().scale * 5))
             end
         end
 
@@ -297,22 +320,17 @@ callback.register("onNPCDeath", function(npc)
     end
 end)
 
-callback.register("onGameStart", function()
-    diff = Difficulty.getActive():getName()
-    if diff == "Drizzle" then
-        scale = 0.06
-    elseif diff == "Rainstorm" then
-        scale = 0.12
-    elseif diff == "Monsoon" then
-        scale = 0.16
-    end
-end)
-
 -- Tracks when a current run ends
 callback.register("onGameEnd", function()
     runStarted = false
     playerInst = nil
 end)
+
+-----------------------------------------------------------------------
+-- HUD Elements                                                      --
+-----------------------------------------------------------------------
+
+
 
 -----------------------------------------------------------------------
 -- Helper functions                                                  --

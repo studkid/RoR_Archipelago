@@ -1,11 +1,25 @@
 {
     "name": "Archipelago Randomizer",
-    "description": "Adds support for archipelago multiorld to Risk of Rain",
+    "description": "Adds support for archipelago multiworld to Risk of Rain",
 	"internalname": "APRando",
     "version": "0.1",
     "author": "studkid",
 	"mpcompat": false,
-	"dependencies": [
-
+	"options": [
+		{
+            "name" : "Server Address:",
+            "flag" : "ap_server_",
+            "text" : true
+        },
+        {
+            "name" : "Slot:",
+            "flag" : "ap_slot_",
+            "text" : true
+        },
+        {
+            "name" : "Password:",
+            "flag" : "ap_password_",
+            "text" : true
+        },
 	]
 }
