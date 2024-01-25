@@ -19,7 +19,8 @@ local slotData = nil
 
 local itemsCollected = {}
 local locationsMissing = {}
-local trapQueue = {}
+local combatQueue = 0
+local scale = 0
 local expQueue = 0
 
 -----------------------------------------------------------------------
@@ -54,8 +55,8 @@ function connect(server, slot, password)
         connected = true
 
         print(slotData)
-        print(ap.checked_locations)
-        print(ap:get_location_name(ap.missing_locations[1]))
+        -- print(ap.checked_locations)
+        print(ap.missing_locations)
 
         locationsMissing = ap.missing_locations
     end
@@ -75,10 +76,9 @@ function connect(server, slot, password)
 
             if playerInst == nil then -- Check if playerInst has been initialized
                 return
-            end
 
             -- Items
-            if item.item == 250001 then -- Common Item
+            elseif item.item == 250001 then -- Common Item
 		        playerInst:giveItem(common:roll())
             elseif item.item == 250002 then -- Uncommon Item
 		        playerInst:giveItem(uncommon:roll())
@@ -108,10 +108,15 @@ function connect(server, slot, password)
 
             -- Traps
             elseif item.item == 250201 then -- Time Warp
-                misc.hud:set("gold", misc.hud:get("gold") + (100 * Difficulty.getScaling(cost)))
-            elseif item.item == 250202 then -- Combat
-                misc.hud:set("gold", misc.hud:get("gold") + (100 * Difficulty.getScaling(cost)))
-            elseif item.item == 250203 then -- Meteor
+                misc.hud:set("minute", misc.hud:get("minute") + 5)
+                misc.director:set("enemy_buff", misc.director:get("enemy_buff") + (scale * 5))
+            elseif item.item == 250202 and runStarted then -- Combat
+                combatQueue = combatQueue + 5
+            elseif item.item == 250203 and runStarted then -- Meteor
+                playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
+                playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
+                playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
+                playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
                 playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
             end
 
@@ -123,19 +128,19 @@ function connect(server, slot, password)
     end
 
     function on_location_info(items)
-        print("Locations scouted:")
+        print("Locations scouted: ")
         for _, item in ipairs(items) do
             print(item.item)
         end
     end
 
     function on_location_checked(locations)
-        print("Locations checked:" .. table.concat(locations, ", "))
+        print("Locations checked: " .. table.concat(locations, ", "))
         print("Checked locations: " .. table.concat(ap.checked_locations, ", "))
     end
 
     function on_data_package_changed(data_package)
-        print("Data package changed:")
+        print("Data package changed: ")
         print(data_package)
     end
 
@@ -202,6 +207,7 @@ end)
 -- Give player collected items between runs
 callback.register("onPlayerDraw", function(playerInstance)
     if not runStarted and connected then
+        print(itemsCollected)
         -- Would have this a seperate function but game locks up if run in on_items_recieved
         for _, item in ipairs(itemsCollected) do 
 
@@ -233,6 +239,11 @@ callback.register("onPlayerDraw", function(playerInstance)
                     pAcc.expr = pAcc.maxexp
                     expQueue = expGiven - pAcc.maxexp
                 end
+
+            -- Traps
+            elseif item.item == 250201 then -- Time Warp
+                misc.hud:set("minute", misc.hud:get("minute") + 5)
+                misc.director:set("enemy_buff", misc.director:get("enemy_buff") + (scale * 5))
             end
         end
 
@@ -255,6 +266,12 @@ callback.register("onStep", function()
 	if ap then
         ap:poll() 
     end
+
+    if misc.director:getAlarm(1) > 1 and combatQueue > 0 then
+        print("spawning")
+        misc.director:setAlarm(1, 1)
+        combatQueue = combatQueue - 1
+    end
 end)
 
 -- Location checker
@@ -263,7 +280,6 @@ callback.register("onMapObjectActivate", function(mapObject, activator)
     if connected then
         locationsChecked = {}
         object = mapObject:getObject():getName()
-        
 
         if arrayContains(chests, object) then
             table.insert(locationsChecked, ap.missing_locations[1])
@@ -274,9 +290,21 @@ end)
 
 -- Check when providence dies
 callback.register("onNPCDeath", function(npc)
-    local killed = npc.getObject()
+    local killed = npc:getObject()
+    print(killed:getName())
     if killed:getName() == "Boss3" then
-        ap:LocationChecks({ap:get_item_id("Victory")})
+        ap:StatusUpdate(30)
+    end
+end)
+
+callback.register("onGameStart", function()
+    diff = Difficulty.getActive():getName()
+    if diff == "Drizzle" then
+        scale = 0.06
+    elseif diff == "Rainstorm" then
+        scale = 0.12
+    elseif diff == "Monsoon" then
+        scale = 0.16
     end
 end)
 
