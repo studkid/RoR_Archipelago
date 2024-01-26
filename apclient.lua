@@ -3,6 +3,7 @@ local chests = { 'Chest1', 'Chest2', 'Chest3', 'Chest5'}
 local server = ""
 local slot = ""
 local password = ""
+local connectionMessage = nil
 
 local game_name = "Risk of Rain"
 local items_handling = 7
@@ -27,6 +28,8 @@ local combatQueue = 0
 local scale = 0
 local expQueue = 0
 
+local surface = nil
+
 -----------------------------------------------------------------------
 -- AP Client Handling                                                --
 -----------------------------------------------------------------------
@@ -37,10 +40,12 @@ function connect(server, slot, password)
 
     function on_socket_error(msg)
         print("Socket error: " .. msg)
+        connectionMessage = "&r&Socket cannot be found!&!&"
     end
 
     function on_socket_disconnected()
         print("Socket disconnected")
+        connectionMessage = "&r&Socket disconnected!&!&"
         connected = false
         skipItemSend = true
         itemsCollected = {}
@@ -53,6 +58,7 @@ function connect(server, slot, password)
 
     function on_slot_connected(data)
         print("Slot connected")
+        connectionMessage = "&g&Socket connected!&!&"
         slotData = data
         
         curPlayerSlot = ap:get_player_number()
@@ -63,6 +69,7 @@ function connect(server, slot, password)
 
     function on_slot_refused(reasons)
         print("Slot refused: " .. table.concat(reasons, ", "))
+        connectionMessage = "&r&Slot Refused!  Check Console!&!&"
     end
 
     function on_items_received(items)
@@ -222,6 +229,13 @@ callback.register("onLoad", function(item)
 	connect(server, slot, password)
 end)
 
+-- Runs poll() every game tick
+callback.register("globalStep", function(room)
+    if ap then
+        ap:poll() 
+    end
+end)
+
 -- Save the player instance to a local variable
 callback.register("onPlayerInit", function(playerInstance)
     playerInst = playerInstance
@@ -284,12 +298,8 @@ callback.register("onPlayerLevelUp", function(player)
     end
 end)
 
--- Runs poll() every game tick while in game
+-- Combat Trap Handler
 callback.register("onStep", function()
-	if ap then
-        ap:poll() 
-    end
-
     if misc.director:getAlarm(1) > 1 and combatQueue > 0 then
         print("spawning")
         misc.director:setAlarm(1, 1)
@@ -330,7 +340,26 @@ end)
 -- HUD Elements                                                      --
 -----------------------------------------------------------------------
 
+local drawn = false
 
+local drawConnected = function()
+    local w, h = graphics.getGameResolution()
+    graphics.printColor(connectionMessage, 10, h-15)
+end
+
+callback.register("globalStep", function(room)
+    local roomName = room:getName()
+    local title = {"Start", "Select", "SelectCoop"}
+
+    if arrayContains(title, roomName) and connectionMessage ~= nil and not drawn then
+        graphics.bindDepth(-9999, drawConnected)
+        drawn = true
+    end
+end) 
+
+callback.register("globalRoomStart", function(room)
+    drawn = false
+end)
 
 -----------------------------------------------------------------------
 -- Helper functions                                                  --
