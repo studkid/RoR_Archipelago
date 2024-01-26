@@ -80,7 +80,6 @@ function connect(server, slot, password)
             print(ap:get_item_name(item.item))
 
             if playerInst == nil then -- Check if playerInst has been initialized
-                return
 
             -- Items
             elseif item.item == 250001 then -- Common Item
@@ -129,7 +128,6 @@ function connect(server, slot, password)
         end
 
         skipItemSend = false
-        runStarted = true
     end
 
     function on_location_info(items)
@@ -354,8 +352,9 @@ callback.register("globalStep", function(room)
     end
 end) 
 
-callback.register("onPlayerHUDDraw", function(player, x, y)
-    
+callback.register("onPlayerHUDDraw", function(player, hudX, hudY)
+    local w, h = graphics.getGameResolution()
+    graphics.printColor(connectionMessage, 10, h-15)
 end)
 
 -----------------------------------------------------------------------
