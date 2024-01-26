@@ -3,7 +3,7 @@ local chests = { 'Chest1', 'Chest2', 'Chest3', 'Chest5'}
 local server = ""
 local slot = ""
 local password = ""
-local connectionMessage = nil
+local connectionMessage = "Connecting..."
 
 local game_name = "Risk of Rain"
 local items_handling = 7
@@ -27,8 +27,6 @@ local locationsMissing = {}
 local combatQueue = 0
 local scale = 0
 local expQueue = 0
-
-local surface = nil
 
 -----------------------------------------------------------------------
 -- AP Client Handling                                                --
@@ -340,25 +338,24 @@ end)
 -- HUD Elements                                                      --
 -----------------------------------------------------------------------
 
-local drawn = false
-
+-- Draw connection status
 local drawConnected = function()
     local w, h = graphics.getGameResolution()
     graphics.printColor(connectionMessage, 10, h-15)
 end
 
+-- Draws connection status on menu
 callback.register("globalStep", function(room)
     local roomName = room:getName()
     local title = {"Start", "Select", "SelectCoop"}
 
-    if arrayContains(title, roomName) and connectionMessage ~= nil and not drawn then
+    if arrayContains(title, roomName) then
         graphics.bindDepth(-9999, drawConnected)
-        drawn = true
     end
 end) 
 
-callback.register("globalRoomStart", function(room)
-    drawn = false
+callback.register("onPlayerHUDDraw", function(player, x, y)
+    
 end)
 
 -----------------------------------------------------------------------
