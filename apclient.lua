@@ -4,6 +4,7 @@ local server = ""
 local slot = ""
 local password = ""
 local connectionMessage = "Connecting..."
+local messageQueue = {}
 
 local game_name = "Risk of Rain"
 local items_handling = 7
@@ -24,9 +25,11 @@ local slotData = nil
 
 local itemsCollected = {}
 local locationsMissing = {}
+local checks = 0
 local combatQueue = 0
 local scale = 0
 local expQueue = 0
+local pickupStep = 0
 
 -----------------------------------------------------------------------
 -- AP Client Handling                                                --
@@ -58,6 +61,7 @@ function connect(server, slot, password)
         print("Slot connected")
         connectionMessage = "&g&Socket connected!&!&"
         slotData = data
+        print(slotData)
         
         curPlayerSlot = ap:get_player_number()
         connected = true
@@ -75,9 +79,9 @@ function connect(server, slot, password)
             return
         end
 
-        print("Items received:")
         for _, item in ipairs(items) do
-            print(ap:get_item_name(item.item))
+            print("Recieved " .. ap:get_item_name(item.item) .. " from " .. ap:get_player_alias(item.player))
+            table.insert(messageQueue, item)
 
             if playerInst == nil then -- Check if playerInst has been initialized
 
@@ -139,7 +143,6 @@ function connect(server, slot, password)
 
     function on_location_checked(locations)
         print("Locations checked: " .. table.concat(locations, ", "))
-        print("Checked locations: " .. table.concat(ap.checked_locations, ", "))
     end
 
     function on_data_package_changed(data_package)
@@ -304,15 +307,20 @@ callback.register("onStep", function()
 end)
 
 -- Location checker
-callback.register("onMapObjectActivate", function(mapObject, activator)
-    print(mapObject:getObject():getName())
-    if connected then
-        locationsChecked = {}
-        object = mapObject:getObject():getName()
+callback.register("onItemPickup", function(itemInst, player)
+    item = itemInst:getItem()
 
-        if arrayContains(chests, object) then
+    if connected and not item.isUseItem then
+        locationsChecked = {}
+
+        if slotData.itemPickupStep == pickupStep then
             table.insert(locationsChecked, ap.missing_locations[1])
             ap:LocationChecks(locationsChecked)
+            player:removeItem(item, 1)
+            pickupStep = 0
+            checks = checks + 1
+        else
+            pickupStep = pickupStep + 1
         end
     end
 end) 
@@ -320,7 +328,6 @@ end)
 -- Check when providence dies
 callback.register("onNPCDeath", function(npc)
     local killed = npc:getObject()
-    print(killed:getName())
     if killed:getName() == "Boss3" then
         ap:StatusUpdate(30)
     end
@@ -335,6 +342,8 @@ end)
 -----------------------------------------------------------------------
 -- HUD Elements                                                      --
 -----------------------------------------------------------------------
+
+local msgTimer = 500
 
 -- Draw connection status
 local drawConnected = function()
@@ -352,9 +361,31 @@ callback.register("globalStep", function(room)
     end
 end) 
 
+-- Draws in game UI
 callback.register("onPlayerHUDDraw", function(player, hudX, hudY)
     local w, h = graphics.getGameResolution()
     graphics.printColor(connectionMessage, 10, h-15)
+
+    -- "Chat" window
+    for i, item in pairs(messageQueue) do
+        if i < 6 then
+            msg = "Recieved " .. ap:get_item_name(item.item) .. " from &y&" .. ap:get_player_alias(item.player) .. "&!&"
+            graphics.printColor(msg, 10, 25 + (10 * i))
+        end
+    end
+
+    if next(messageQueue) ~= nil then
+        msgTimer = msgTimer - 1
+        print(msgTimer)    
+
+        if msgTimer < 1 then 
+            print(table.remove(messageQueue, 1))
+            msgTimer = 500
+        end
+    end
+
+    -- Goal read out
+    graphics.print(checks .. "/" .. slotData.totalLocations .. " Checks Remaining.  Step Progression: " .. pickupStep .. "/" .. slotData.itemPickupStep, w/2, h-15, graphics.ALIGN_MIDDLE)
 end)
 
 -----------------------------------------------------------------------
