@@ -80,9 +80,6 @@ function connect(server, slot, password)
         end
 
         for _, item in ipairs(items) do
-            print("Recieved " .. ap:get_item_name(item.item) .. " from " .. ap:get_player_alias(item.player))
-            table.insert(messageQueue, item)
-
             if playerInst == nil then -- Check if playerInst has been initialized
 
             -- Items
@@ -152,13 +149,12 @@ function connect(server, slot, password)
 
     function on_print(msg)
         print(msg)
+        table.insert(messageQueue, msg)
     end
 
     function on_print_json(msg, extra)
-        -- print(ap:render_json(msg, message_format))
-        -- for key, value in pairs(extra) do
-        --     print("  " .. key .. ": " .. tostring(value))
-        -- end
+        print(ap:render_json(msg, message_format))
+        table.insert(messageQueue, ap:render_json(msg, message_format))
     end
 
     function on_bounced(bounce)
@@ -367,25 +363,24 @@ callback.register("onPlayerHUDDraw", function(player, hudX, hudY)
     graphics.printColor(connectionMessage, 10, h-15)
 
     -- "Chat" window
-    for i, item in pairs(messageQueue) do
+    for i, msg in pairs(messageQueue) do
         if i < 6 then
-            msg = "Recieved " .. ap:get_item_name(item.item) .. " from &y&" .. ap:get_player_alias(item.player) .. "&!&"
-            graphics.printColor(msg, 10, 25 + (10 * i))
+            -- msg = "Recieved " .. ap:get_item_name(item.item) .. " from &y&" .. ap:get_player_alias(item.player) .. "&!&"
+            graphics.print(msg, 10, 25 + (10 * i), graphics.FONT_SMALL)
         end
     end
 
     if next(messageQueue) ~= nil then
         msgTimer = msgTimer - 1
-        print(msgTimer)    
 
         if msgTimer < 1 then 
-            print(table.remove(messageQueue, 1))
+            table.remove(messageQueue, 1)
             msgTimer = 500
         end
     end
 
     -- Goal read out
-    graphics.print(checks .. "/" .. slotData.totalLocations .. " Checks Remaining.  Step Progression: " .. pickupStep .. "/" .. slotData.itemPickupStep, w/2, h-15, graphics.ALIGN_MIDDLE)
+    graphics.print(checks .. "/" .. slotData.totalLocations .. " Checks Remaining.  Step Progression: " .. pickupStep .. "/" .. slotData.itemPickupStep, w/2, h-15, graphics.FONT_DEFAULT, graphics.ALIGN_MIDDLE)
 end)
 
 -----------------------------------------------------------------------
@@ -429,4 +424,18 @@ function getItemPools(itemPools)
     boss:add(Item.find("Burning Witness"))
     boss:add(Item.find("Legendary Spark"))
     boss:add(Item.find("Imp Overlord's Tentacle"))
+end
+
+-- Add Message
+function addMessage(msg)
+    if not msg then
+        return
+    end
+
+    if type(msg) == "table" then
+        return
+    else
+        table.insert(messageQueue, msg)
+    end
+
 end
