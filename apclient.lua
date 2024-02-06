@@ -1,10 +1,12 @@
-local chests = { 'Chest1', 'Chest2', 'Chest3', 'Chest5'}
-
 local server = ""
 local slot = ""
 local password = ""
 local connectionMessage = "Connecting..."
 local messageQueue = {}
+
+local itemsCollected = {}
+local itemsBuffer = {}
+local locationsMissing = {}
 
 local game_name = "Risk of Rain"
 local items_handling = 7
@@ -23,9 +25,6 @@ local runStarted = false
 local skipItemSend = false
 local slotData = nil
 
-local itemsCollected = {}
-local itemsBuffer = {}
-local locationsMissing = {}
 local checks = 0
 local combatQueue = 0
 local scale = 0
@@ -106,8 +105,8 @@ function connect(server, slot, password)
     end
 
     function on_print_json(msg, extra)
-        -- print(ap:render_json(msg, message_format))
-        -- table.insert(messageQueue, ap:render_json(msg, message_format))
+        print(ap:render_json(msg, message_format))
+        table.insert(messageQueue, ap:render_json(msg, message_format))
     end
 
     function on_bounced(bounce)
@@ -181,10 +180,6 @@ end)
 callback.register("globalStep", function(room)
     if ap then
         ap:poll() 
-    end
-
-    if not misc.getIngame() then
-        print("Pause!!")
     end
 end)
 
@@ -309,7 +304,7 @@ callback.register("onPlayerHUDDraw", function(player, hudX, hudY)
     end
 
     -- Goal read out
-    graphics.print(checks .. "/" .. slotData.totalLocations .. " Checks Remaining.  Step Progression: " .. pickupStep .. "/" .. slotData.itemPickupStep, w/2, h-15, graphics.FONT_DEFAULT, graphics.ALIGN_MIDDLE)
+    graphics.print((slotData.totalLocations - #locationsMissing) .. "/" .. slotData.totalLocations .. " Checks Remaining.  Step Progression: " .. pickupStep .. "/" .. slotData.itemPickupStep, w/2, h-15, graphics.FONT_DEFAULT, graphics.ALIGN_MIDDLE)
 end)
 
 -----------------------------------------------------------------------
