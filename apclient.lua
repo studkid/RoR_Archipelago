@@ -303,7 +303,8 @@ callback.register("onStep", function()
 end)
 
 -- Location checker
-callback.register("onItemPickup", function(itemInst, player)
+-- TODO Add alternative "onItemPickup" callback when starstorm is used?
+callback.register("onItemInit", function(itemInst)
     item = itemInst:getItem()
 
     if connected and not item.isUseItem then
@@ -312,7 +313,7 @@ callback.register("onItemPickup", function(itemInst, player)
         if slotData.itemPickupStep == pickupStep then
             table.insert(locationsChecked, ap.missing_locations[1])
             ap:LocationChecks(locationsChecked)
-            player:removeItem(item, 1)
+            itemInst:destroy()
             pickupStep = 0
             checks = checks + 1
         else
