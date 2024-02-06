@@ -24,6 +24,7 @@ local skipItemSend = false
 local slotData = nil
 
 local itemsCollected = {}
+local itemsBuffer = {}
 local locationsMissing = {}
 local checks = 0
 local combatQueue = 0
@@ -79,55 +80,7 @@ function connect(server, slot, password)
             return
         end
 
-        for _, item in ipairs(items) do
-            if playerInst == nil then -- Check if playerInst has been initialized
-
-            -- Items
-            elseif item.item == 250001 then -- Common Item
-		        playerInst:giveItem(common:roll())
-            elseif item.item == 250002 then -- Uncommon Item
-		        playerInst:giveItem(uncommon:roll())
-	        elseif item.item == 250003 then -- Rare Item
-		        playerInst:giveItem(rare:roll())
-	        elseif item.item == 250004 then -- Boss Item
-                bossItem = boss:roll()
-
-                if bossItem.isUseItem then
-                    bossItem:create(playerInst.x, playerInst.y)
-                else 
-                    playerInst:giveItem(bossItem)
-                end
-            elseif item.item == 250005 then -- Equipment
-                equipment:roll():create(playerInst.x, playerInst.y)
-
-            -- Fillers
-            elseif item.item == 250101 then -- Money
-                misc.hud:set("gold", misc.hud:get("gold") + (100 * Difficulty.getScaling(cost)))
-            elseif item.item == 250102 then -- Experience
-                local pAcc = playerInst:getAccessor()
-                expGiven = 1000
-                if expGiven > pAcc.maxexp then
-                    pAcc.expr = pAcc.maxexp
-                    expQueue = expGiven - pAcc.maxexp
-                end
-
-            -- Traps
-            elseif item.item == 250201 then -- Time Warp
-                misc.hud:set("minute", misc.hud:get("minute") + 5)
-                misc.director:set("enemy_buff", misc.director:get("enemy_buff") + (Difficulty.getActive().scale * 5))
-            elseif item.item == 250202 and runStarted then -- Combat
-                combatQueue = combatQueue + 5
-            elseif item.item == 250203 and runStarted then -- Meteor
-                playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
-                playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
-                playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
-                playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
-                playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
-            end
-
-            table.insert(itemsCollected, item)
-        end
-
+        itemsBuffer = items
         skipItemSend = false
     end
 
@@ -153,8 +106,8 @@ function connect(server, slot, password)
     end
 
     function on_print_json(msg, extra)
-        print(ap:render_json(msg, message_format))
-        table.insert(messageQueue, ap:render_json(msg, message_format))
+        -- print(ap:render_json(msg, message_format))
+        -- table.insert(messageQueue, ap:render_json(msg, message_format))
     end
 
     function on_bounced(bounce)
@@ -229,6 +182,10 @@ callback.register("globalStep", function(room)
     if ap then
         ap:poll() 
     end
+
+    if not misc.getIngame() then
+        print("Pause!!")
+    end
 end)
 
 -- Save the player instance to a local variable
@@ -239,44 +196,9 @@ end)
 -- Give player collected items between runs
 callback.register("onPlayerDraw", function(playerInstance)
     if not runStarted and connected then
-        print(itemsCollected)
-        -- Would have this a seperate function but game locks up if run in on_items_recieved
+        -- print(itemsCollected)
         for _, item in ipairs(itemsCollected) do 
-
-            -- Items
-            if item.item == 250001 then -- Common Item
-                playerInstance:giveItem(common:roll())
-            elseif item.item == 250002 then -- Uncommon Item
-                playerInstance:giveItem(uncommon:roll())
-            elseif item.item == 250003 then -- Rare Item
-                playerInstance:giveItem(rare:roll())
-            elseif item.item == 250004 then -- Boss Item
-                bossItem = boss:roll()
-
-                if bossItem.isUseItem then
-                    bossItem:create(playerInstance.x, playerInstance.y)
-                else 
-                    playerInstance:giveItem(bossItem)
-                end
-            elseif item.item == 250005 then -- Equipment
-                equipment:roll():create(playerInstance.x, playerInstance.y)
-            
-            -- Fillers
-            elseif item.item == 250101 then -- Money
-                misc.hud:set("gold", misc.hud:get("gold") + (100 * Difficulty.getScaling(cost)))
-            elseif item.item == 250102 then -- Experience
-                local pAcc = playerInst:getAccessor()
-                expGiven = 1000
-                if expGiven > pAcc.maxexp then
-                    pAcc.expr = pAcc.maxexp
-                    expQueue = expGiven - pAcc.maxexp
-                end
-
-            -- Traps
-            elseif item.item == 250201 then -- Time Warp
-                misc.hud:set("minute", misc.hud:get("minute") + 5)
-                misc.director:set("enemy_buff", misc.director:get("enemy_buff") + (Difficulty.getActive().scale * 5))
-            end
+            giveItem(item)
         end
 
         runStarted = true
@@ -299,6 +221,12 @@ callback.register("onStep", function()
         print("spawning")
         misc.director:setAlarm(1, 1)
         combatQueue = combatQueue - 1
+    end
+
+    if itemsBuffer[1] ~= nil then
+        item = table.remove(itemsBuffer, 1)
+        giveItem(item)
+        table.insert(itemsCollected, item)
     end
 end)
 
@@ -439,4 +367,49 @@ function addMessage(msg)
         table.insert(messageQueue, msg)
     end
 
+end
+
+function giveItem(item)
+    -- Items
+    if item.item == 250001 then -- Common Item
+        playerInst:giveItem(common:roll())
+    elseif item.item == 250002 then -- Uncommon Item
+        playerInst:giveItem(uncommon:roll())
+    elseif item.item == 250003 then -- Rare Item
+        playerInst:giveItem(rare:roll())
+    elseif item.item == 250004 then -- Boss Item
+        bossItem = boss:roll()
+
+        if bossItem.isUseItem then
+            bossItem:create(playerInst.x, playerInst.y)
+        else 
+            playerInst:giveItem(bossItem)
+        end
+    elseif item.item == 250005 then -- Equipment
+        equipment:roll():create(playerInst.x, playerInst.y)
+    
+    -- Fillers
+    elseif item.item == 250101 then -- Money
+        misc.hud:set("gold", misc.hud:get("gold") + (100 * Difficulty.getScaling(cost)))
+    elseif item.item == 250102 then -- Experience
+        local pAcc = playerInst:getAccessor()
+        expGiven = 1000
+        if expGiven > pAcc.maxexp then
+            pAcc.expr = pAcc.maxexp
+            expQueue = expGiven - pAcc.maxexp
+        end
+
+    -- Traps
+    elseif item.item == 250201 then -- Time Warp
+        misc.hud:set("minute", misc.hud:get("minute") + 5)
+        misc.director:set("enemy_buff", misc.director:get("enemy_buff") + (Difficulty.getActive().scale * 5))
+    elseif item.item == 250202 and runStarted then -- Combat
+        combatQueue = combatQueue + 5
+    elseif item.item == 250203 and runStarted then -- Meteor
+        playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
+        playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
+        playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
+        playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
+        playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
+    end
 end
