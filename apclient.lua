@@ -291,6 +291,9 @@ callback.register("onPlayerHUDDraw", function(player, hudX, hudY)
         if i < 6 then
             -- msg = "Recieved " .. ap:get_item_name(item.item) .. " from &y&" .. ap:get_player_alias(item.player) .. "&!&"
             graphics.print(msg, 10, 25 + (10 * i), graphics.FONT_SMALL)
+        else
+            table.remove(messageQueue, 1)
+            msgTimer = 500
         end
     end
 
