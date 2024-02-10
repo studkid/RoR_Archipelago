@@ -30,6 +30,7 @@ local combatQueue = 0
 local scale = 0
 local expQueue = 0
 local pickupStep = 0
+local teleFrags = 0
 
 -----------------------------------------------------------------------
 -- AP Client Handling                                                --
@@ -79,14 +80,16 @@ function connect(server, slot, password)
             return
         end
 
-        itemsBuffer = items
+        for _, item in ipairs(items) do 
+            table.insert(itemsBuffer, item)
+        end
         skipItemSend = false
     end
 
     function on_location_info(items)
         print("Locations scouted: ")
         for _, item in ipairs(items) do
-            print(item.item)
+            print(item)
         end
     end
 
@@ -191,7 +194,6 @@ end)
 -- Give player collected items between runs
 callback.register("onPlayerDraw", function(playerInstance)
     if not runStarted and connected then
-        -- print(itemsCollected)
         for _, item in ipairs(itemsCollected) do 
             giveItem(item)
         end
@@ -210,18 +212,23 @@ callback.register("onPlayerLevelUp", function(player)
     end
 end)
 
--- Combat Trap Handler
+
 callback.register("onStep", function()
+    -- Combat Trap Handler
     if misc.director:getAlarm(1) > 1 and combatQueue > 0 then
-        print("spawning")
         misc.director:setAlarm(1, 1)
         combatQueue = combatQueue - 1
     end
 
+    -- Item Handler
     if itemsBuffer[1] ~= nil then
         item = table.remove(itemsBuffer, 1)
-        giveItem(item)
-        table.insert(itemsCollected, item)
+        if item.item ~= 250006 then
+            giveItem(item)
+            table.insert(itemsCollected, item)
+        else
+            teleFrags = teleFrags + 1
+        end
     end
 end)
 
@@ -239,7 +246,7 @@ callback.register("onItemInit", function(itemInst)
             itemInst:destroy()
             pickupStep = 0
             checks = checks + 1
-        else
+        else 
             pickupStep = pickupStep + 1
         end
     end
@@ -257,6 +264,18 @@ end)
 callback.register("onGameEnd", function()
     runStarted = false
     playerInst = nil
+end)
+
+callback.register("onGameStart", function()
+    if slotData.requiredFrags > teleFrags then
+        Stage.progressionLimit(99999)
+    end
+end)
+
+callback.register("onStageEntry", function(npc)
+	if slotData.requiredFrags > teleFrags then
+        Stage.progressionLimit(0)
+    end
 end)
 
 -----------------------------------------------------------------------
@@ -307,7 +326,16 @@ callback.register("onPlayerHUDDraw", function(player, hudX, hudY)
     end
 
     -- Goal read out
-    graphics.print((slotData.totalLocations - #locationsMissing) .. "/" .. slotData.totalLocations .. " Checks Remaining.  Step Progression: " .. pickupStep .. "/" .. slotData.itemPickupStep, w/2, h-15, graphics.FONT_DEFAULT, graphics.ALIGN_MIDDLE)
+    if slotData.requiredFrags < 1 then
+        graphics.print((slotData.totalLocations - #locationsMissing) .. "/" .. slotData.totalLocations .. 
+                        " Checks Remaining.  Step Progression: " .. pickupStep .. "/" .. slotData.itemPickupStep, 
+                        w/2, h-15, graphics.FONT_DEFAULT, graphics.ALIGN_MIDDLE)
+    else
+        graphics.print((slotData.totalLocations - #locationsMissing) .. "/" .. slotData.totalLocations .. 
+                        " Checks Remaining.  " .. teleFrags .. "/" .. slotData.requiredFrags .. " Fragments Remaining.  " .. 
+                        "Step Progression: " .. pickupStep .. "/" .. slotData.itemPickupStep,
+                        w/2, h-15, graphics.FONT_DEFAULT, graphics.ALIGN_MIDDLE)
+    end
 end)
 
 -----------------------------------------------------------------------
