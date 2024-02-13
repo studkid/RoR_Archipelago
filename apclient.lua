@@ -3,6 +3,7 @@ local slot = ""
 local password = ""
 local connectionMessage = "Connecting..."
 local messageQueue = {}
+local initialSetup = false
 
 local itemsCollected = {}
 local itemsBuffer = {}
@@ -31,6 +32,9 @@ local scale = 0
 local expQueue = 0
 local pickupStep = 0
 local teleFrags = 0
+
+local lockedMap = {}
+local stageProg = 0
 
 -----------------------------------------------------------------------
 -- AP Client Handling                                                --
@@ -183,6 +187,12 @@ end)
 callback.register("globalStep", function(room)
     if ap then
         ap:poll() 
+
+        if initialSetup == false then
+            -- if slotData.requiredFrags > 0 then
+            --     table.insert(lockedMap(Stage.find("Risk of Rain")))
+            -- end
+        end
     end
 end)
 
@@ -228,6 +238,9 @@ callback.register("onStep", function()
             table.insert(itemsCollected, item)
         else
             teleFrags = teleFrags + 1
+            if teleFrags > slotData.requiredFrags then
+                
+            end
         end
     end
 end)
@@ -254,6 +267,10 @@ end)
 
 -- Check when providence dies
 callback.register("onNPCDeath", function(npc)
+    if slotData.requiredFrags > teleFrags then
+        return
+    end
+
     local killed = npc:getObject()
     if killed:getName() == "Boss3" then
         ap:StatusUpdate(30)
@@ -266,16 +283,15 @@ callback.register("onGameEnd", function()
     playerInst = nil
 end)
 
-callback.register("onGameStart", function()
-    if slotData.requiredFrags > teleFrags then
-        Stage.progressionLimit(99999)
-    end
-end)
+callback.register("onStageEntry", function()
+    stage = Stage.getCurrentStage()
 
-callback.register("onStageEntry", function(npc)
-	if slotData.requiredFrags > teleFrags then
-        Stage.progressionLimit(0)
+	if stage == Stage.find("Risk of Rain") and slotData.requiredFrags >= teleFrags then
+        nextStage = Stage.progression[stageProg + 1]
+        Stage.transport(nextStage[math.random(nextStage:len())])
     end
+
+    getStageProg(stage)
 end)
 
 -----------------------------------------------------------------------
@@ -343,6 +359,7 @@ end)
 -----------------------------------------------------------------------
 
 -- Checks array for value
+-- TODO Convert existing arrays to lists instead and use it's contains function instead
 function arrayContains(tab, val)
     for _, value in ipairs(tab) do
         if value == val then
@@ -381,6 +398,23 @@ function getItemPools(itemPools)
     boss:add(Item.find("Imp Overlord's Tentacle"))
 end
 
+-- Check stage progression
+function getStageProg(stage)
+    if Stage.progression[1]:contains(stage) then
+        stageProg = 1
+    elseif Stage.progression[2]:contains(stage) then
+        stageProg = 2
+    elseif Stage.progression[3]:contains(stage) then
+        stageProg = 3
+    elseif Stage.progression[4]:contains(stage) then
+        stageProg = 4
+    elseif Stage.progression[5]:contains(stage) then
+        stageProg = 5
+    else
+        stageProg = 6
+    end
+end
+
 -- Add Message
 function addMessage(msg)
     if not msg then
@@ -395,7 +429,12 @@ function addMessage(msg)
 
 end
 
+-- Give Item
 function giveItem(item)
+    if item.item == nil then
+        return
+    end
+
     -- Items
     if item.item == 250001 then -- Common Item
         playerInst:giveItem(common:roll())
