@@ -33,7 +33,8 @@ local expQueue = 0
 local pickupStep = 0
 local teleFrags = 0
 
-local lockedMap = {}
+local unlockedMaps = {}
+local unlockedStages = {1}
 local stageProg = 0
 
 -----------------------------------------------------------------------
@@ -85,7 +86,11 @@ function connect(server, slot, password)
         end
 
         for _, item in ipairs(items) do 
-            table.insert(itemsBuffer, item)
+            if item.item < 250400 then
+                table.insert(itemsBuffer, item)
+            else
+                table.insert(unlockedMaps, ap:get_item_name(item.item))
+            end
         end
         skipItemSend = false
     end
@@ -187,12 +192,6 @@ end)
 callback.register("globalStep", function(room)
     if ap then
         ap:poll() 
-
-        if initialSetup == false then
-            -- if slotData.requiredFrags > 0 then
-            --     table.insert(lockedMap(Stage.find("Risk of Rain")))
-            -- end
-        end
     end
 end)
 
@@ -286,9 +285,12 @@ end)
 callback.register("onStageEntry", function()
     stage = Stage.getCurrentStage()
 
-	if stage == Stage.find("Risk of Rain") and slotData.requiredFrags >= teleFrags then
-        nextStage = Stage.progression[stageProg + 1]
-        Stage.transport(nextStage[math.random(nextStage:len())])
+	if (stage == Stage.find("Risk of Rain") and slotData.requiredFrags >= teleFrags) then
+        skipStage(1)
+    end
+
+    if not arrayContains(unlockedMaps, stage:getName()) and not slotData.grouping == 0 then
+        skipStage(0)
     end
 
     getStageProg(stage)
@@ -476,5 +478,72 @@ function giveItem(item)
         playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
         playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
         playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
+
+    -- Stages
+    elseif item.item == 250301 then
+        table.insert(unlockedStages, 2)
+    elseif item.item == 250302 then
+        table.insert(unlockedStages, 3)
+    elseif item.item == 250303 then
+        table.insert(unlockedStages, 4)
+    elseif item.item == 250304 then
+        table.insert(unlockedStages, 5)
     end
+end
+
+function skipStage(offset)
+    local nextProg = math.fmod(stageProg + offset, 6)
+
+    if not arrayContains(unlockedStages, nextProg) then
+        nextProg = math.fmod(stageProg + 1, 6)
+    end
+
+    local stageTab = Stage.progression[nextProg]
+    local nextStages = getStagesUnlocked(stageTab)
+
+    misc.director:set("enemy_buff", misc.director:get("enemy_buff") - 0.45)
+    misc.director:set("stages_passed", misc.director:get("stages_passed") - 1)
+    Stage.transport(nextStages[math.random(nextStages:len())])
+end
+
+function getStagesUnlocked(progression)
+    local stages = progression
+
+    for _, map in ipairs(progression:toTable()) do
+        if not arrayContains(unlockedMaps, map:getName()) then
+            progression:remove(map)
+        end
+    end
+
+    if progression:len() == 0 then
+        local nextProg = math.fmod(stageProg + 1, 6)
+
+        if not arrayContains(unlockedStages, nextProg) then
+            nextProg = math.fmod(stageProg + 1, 6)
+        end
+
+        misc.
+        stages = getStagesUnlocked(Stage.progression[nextProg]:toTable())
+    end
+
+    return progression
+end
+
+function sendItemUniversal()
+    locationsChecked = {}
+
+        if slotData.itemPickupStep == pickupStep then
+            table.insert(locationsChecked, ap.missing_locations[1])
+            ap:LocationChecks(locationsChecked)
+            itemInst:destroy()
+            pickupStep = 0
+            checks = checks + 1
+        else 
+            pickupStep = pickupStep + 1
+        end
+    end
+end
+
+function sendItemMap()
+
 end
