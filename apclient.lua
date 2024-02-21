@@ -1,3 +1,5 @@
+require("staticvars")
+
 local server = ""
 local slot = ""
 local password = ""
@@ -26,7 +28,6 @@ local runStarted = false
 local skipItemSend = false
 local slotData = nil
 
-local checks = 0
 local combatQueue = 0
 local scale = 0
 local expQueue = 0
@@ -72,7 +73,16 @@ function connect(server, slot, password)
         curPlayerSlot = ap:get_player_number()
         connected = true
 
-        locationsMissing = ap.missing_locations
+        if data.grouping == 0 then
+            locationsMissing = ap.missing_locations
+        elseif data.grouping == 2 then
+            for _, loc in ipairs(ap.missing_locations) do
+                name = ap:get_location_name(loc)
+                map = string.match(name, "(.*):")
+                table.insert(mapgroup[map], 1, loc)
+            end
+            print(mapgroup)
+        end
     end
 
     function on_slot_refused(reasons)
@@ -87,7 +97,7 @@ function connect(server, slot, password)
 
         for _, item in ipairs(items) do 
             if item.item < 250400 then
-                table.insert(itemsBuffer, item)
+                table.insert(itemsBuffer, 1, item)
             else
                 table.insert(unlockedMaps, ap:get_item_name(item.item))
             end
@@ -231,7 +241,7 @@ callback.register("onStep", function()
 
     -- Item Handler
     if itemsBuffer[1] ~= nil then
-        item = table.remove(itemsBuffer, 1)
+        item = table.remove(itemsBuffer)
         if item.item ~= 250006 then
             giveItem(item)
             table.insert(itemsCollected, item)
@@ -250,16 +260,10 @@ callback.register("onItemInit", function(itemInst)
     item = itemInst:getItem()
 
     if connected and not item.isUseItem then
-        locationsChecked = {}
-
-        if slotData.itemPickupStep == pickupStep then
-            table.insert(locationsChecked, ap.missing_locations[1])
-            ap:LocationChecks(locationsChecked)
-            itemInst:destroy()
-            pickupStep = 0
-            checks = checks + 1
-        else 
-            pickupStep = pickupStep + 1
+        if slotData.grouping == 0 then
+            sendItemUniversal(itemInst)
+        else
+            sendItemMap(itemInst)
         end
     end
 end) 
@@ -344,16 +348,22 @@ callback.register("onPlayerHUDDraw", function(player, hudX, hudY)
     end
 
     -- Goal read out
-    if slotData.requiredFrags < 1 then
-        graphics.print((slotData.totalLocations - #locationsMissing) .. "/" .. slotData.totalLocations .. 
-                        " Checks Remaining.  Step Progression: " .. pickupStep .. "/" .. slotData.itemPickupStep, 
-                        w/2, h-15, graphics.FONT_DEFAULT, graphics.ALIGN_MIDDLE)
-    else
-        graphics.print((slotData.totalLocations - #locationsMissing) .. "/" .. slotData.totalLocations .. 
-                        " Checks Remaining.  " .. teleFrags .. "/" .. slotData.requiredFrags .. " Fragments Remaining.  " .. 
-                        "Step Progression: " .. pickupStep .. "/" .. slotData.itemPickupStep,
-                        w/2, h-15, graphics.FONT_DEFAULT, graphics.ALIGN_MIDDLE)
+    local goalString = ""
+
+    if slotData.grouping == 0 then
+        goalString = goalString .. (slotData.totalLocations - #locationsMissing) .. "/" .. slotData.totalLocations .. " Checks Remaining.  "
+    elseif slotData.grouping == 2 then
+        local stage = Stage.getCurrentStage()
+        goalString = goalString .. (slotData.totalLocations - #mapgroup[stage:getName()]) .. "/" .. slotData.totalLocations .. " Checks Remaining.  "
     end
+
+    goalString = goalString .. "Step Progression: " .. pickupStep .. "/" .. slotData.itemPickupStep.. "  "
+
+    if slotData.requiredFrags > 0 then
+        goalString = goalString .. teleFrags .. "/" .. slotData.requiredFrags .. " Fragments Remaining.  "
+    end
+
+    graphics.print(goalString, w/2, h-15, graphics.FONT_DEFAULT, graphics.ALIGN_MIDDLE)
 end)
 
 -----------------------------------------------------------------------
@@ -529,21 +539,29 @@ function getStagesUnlocked(progression)
     return progression
 end
 
-function sendItemUniversal()
+function sendItemUniversal(itemInst)
     locationsChecked = {}
 
-        if slotData.itemPickupStep == pickupStep then
-            table.insert(locationsChecked, ap.missing_locations[1])
-            ap:LocationChecks(locationsChecked)
-            itemInst:destroy()
-            pickupStep = 0
-            checks = checks + 1
-        else 
-            pickupStep = pickupStep + 1
-        end
+    if slotData.itemPickupStep == pickupStep then
+        table.insert(locationsChecked, ap.missing_locations[1])
+        ap:LocationChecks(locationsChecked)
+        itemInst:destroy()
+        pickupStep = 0
+    else 
+        pickupStep = pickupStep + 1
     end
 end
 
-function sendItemMap()
+function sendItemMap(itemInst)
+    locationsChecked = {}
+    map = Stage.getCurrentStage():getName()
 
+    if slotData.itemPickupStep == pickupStep then
+        table.insert(locationsChecked, table.remove(mapgroup[map]))
+        ap:LocationChecks(locationsChecked)
+        itemInst:destory()
+        pickupStep = 0
+    else
+        pickupStep = pickupStep + 1
+    end
 end
