@@ -35,8 +35,8 @@ local pickupStep = 0
 local teleFrags = 0
 
 local unlockedMaps = {}
-local unlockedStages = {1}
-local stageProg = 0
+local unlockedStages = {1, 6}
+local lastStage = 0
 
 -----------------------------------------------------------------------
 -- AP Client Handling                                                --
@@ -81,7 +81,6 @@ function connect(server, slot, password)
                 map = string.match(name, "(.*):")
                 table.insert(mapgroup[map], 1, loc)
             end
-            print(mapgroup)
         end
     end
 
@@ -96,8 +95,18 @@ function connect(server, slot, password)
         end
 
         for _, item in ipairs(items) do 
-            if item.item < 250400 then
+            if item.item < 250300 then
                 table.insert(itemsBuffer, 1, item)
+            elseif item.item < 250400 then
+                if item.item == 250302 then
+                    table.insert(unlockedStages, 2)
+                elseif item.item == 250303 then
+                    table.insert(unlockedStages, 3)
+                elseif item.item == 250304 then
+                    table.insert(unlockedStages, 4)
+                elseif item.item == 250305 then
+                    table.insert(unlockedStages, 5)
+                end
             else
                 table.insert(unlockedMaps, ap:get_item_name(item.item))
             end
@@ -196,6 +205,8 @@ callback.register("onLoad", function(item)
     end
     
 	connect(server, slot, password)
+
+    print(math.fmod(12, 6))
 end)
 
 -- Runs poll() every game tick
@@ -240,16 +251,13 @@ callback.register("onStep", function()
     end
 
     -- Item Handler
-    if itemsBuffer[1] ~= nil then
-        item = table.remove(itemsBuffer)
+    if next(itemsBuffer) ~= nil then
+        local item = table.remove(itemsBuffer)
         if item.item ~= 250006 then
             giveItem(item)
             table.insert(itemsCollected, item)
         else
             teleFrags = teleFrags + 1
-            if teleFrags > slotData.requiredFrags then
-                
-            end
         end
     end
 end)
@@ -257,13 +265,33 @@ end)
 -- Location checker
 -- TODO Add alternative "onItemPickup" callback when starstorm is used?
 callback.register("onItemInit", function(itemInst)
-    item = itemInst:getItem()
+    local item = itemInst:getItem()
+    local map = Stage.getCurrentStage():getName()
 
     if connected and not item.isUseItem then
-        if slotData.grouping == 0 then
-            sendItemUniversal(itemInst)
-        else
-            sendItemMap(itemInst)
+        if slotData.grouping == 0 and #locationsMissing ~= 0 then
+            locationsChecked = {}
+
+            if slotData.itemPickupStep == pickupStep then
+                table.insert(locationsChecked, ap.missing_locations[1])
+                ap:LocationChecks(locationsChecked)
+                itemInst:destroy()
+                pickupStep = 0
+            else 
+                pickupStep = pickupStep + 1
+            end
+        elseif #mapgroup[map] ~= 0 then
+            locationsChecked = {}
+            map = Stage.getCurrentStage():getName()
+
+            if slotData.itemPickupStep == pickupStep then
+                table.insert(locationsChecked, table.remove(mapgroup[map]))
+                ap:LocationChecks(locationsChecked)
+                itemInst:destroy()
+                pickupStep = 0
+            else
+                pickupStep = pickupStep + 1
+            end
         end
     end
 end) 
@@ -287,17 +315,18 @@ callback.register("onGameEnd", function()
 end)
 
 callback.register("onStageEntry", function()
-    stage = Stage.getCurrentStage()
+    local stage = Stage.getCurrentStage()
+    local stageProg = getStageProg(stage)
 
 	if (stage == Stage.find("Risk of Rain") and slotData.requiredFrags >= teleFrags) then
-        skipStage(1)
+        skipStage(lastStage + 1)
     end
 
-    if not arrayContains(unlockedMaps, stage:getName()) and not slotData.grouping == 0 then
-        skipStage(0)
+    if not arrayContains(unlockedMaps, stage:getName()) or not arrayContains(unlockedStages, stageProg) and slotData.grouping ~= 0 then
+        skipStage(stageProg - 1)
     end
 
-    getStageProg(stage)
+    lastStage = getStageProg(Stage.getCurrentStage())
 end)
 
 -----------------------------------------------------------------------
@@ -330,7 +359,7 @@ callback.register("onPlayerHUDDraw", function(player, hudX, hudY)
     -- "Chat" window
     for i, msg in pairs(messageQueue) do
         if i < 6 then
-            -- msg = "Recieved " .. ap:get_item_name(item.item) .. " from &y&" .. ap:get_player_alias(item.player) .. "&!&"
+            graphics.color(Color.fromRGB(192, 192, 192))
             graphics.print(msg, 10, 25 + (10 * i), graphics.FONT_SMALL)
         else
             table.remove(messageQueue, 1)
@@ -352,7 +381,7 @@ callback.register("onPlayerHUDDraw", function(player, hudX, hudY)
 
     if slotData.grouping == 0 then
         goalString = goalString .. (slotData.totalLocations - #locationsMissing) .. "/" .. slotData.totalLocations .. " Checks Remaining.  "
-    elseif slotData.grouping == 2 then
+    elseif slotData.grouping == 2 and not Stage.getCurrentStage() == Stage.find("Risk of Rain") then
         local stage = Stage.getCurrentStage()
         goalString = goalString .. (slotData.totalLocations - #mapgroup[stage:getName()]) .. "/" .. slotData.totalLocations .. " Checks Remaining.  "
     end
@@ -363,6 +392,7 @@ callback.register("onPlayerHUDDraw", function(player, hudX, hudY)
         goalString = goalString .. teleFrags .. "/" .. slotData.requiredFrags .. " Fragments Remaining.  "
     end
 
+    graphics.color(Color.fromRGB(192, 192, 192))
     graphics.print(goalString, w/2, h-15, graphics.FONT_DEFAULT, graphics.ALIGN_MIDDLE)
 end)
 
@@ -378,6 +408,7 @@ function arrayContains(tab, val)
             return true
         end
     end
+    return false
 end
 
 -- Registers every necessary itemPool
@@ -413,17 +444,17 @@ end
 -- Check stage progression
 function getStageProg(stage)
     if Stage.progression[1]:contains(stage) then
-        stageProg = 1
+        return 1
     elseif Stage.progression[2]:contains(stage) then
-        stageProg = 2
+        return 2
     elseif Stage.progression[3]:contains(stage) then
-        stageProg = 3
+        return 3
     elseif Stage.progression[4]:contains(stage) then
-        stageProg = 4
+        return 4
     elseif Stage.progression[5]:contains(stage) then
-        stageProg = 5
+        return 5
     else
-        stageProg = 6
+        return 6
     end
 end
 
@@ -488,80 +519,45 @@ function giveItem(item)
         playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
         playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
         playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
-
-    -- Stages
-    elseif item.item == 250301 then
-        table.insert(unlockedStages, 2)
-    elseif item.item == 250302 then
-        table.insert(unlockedStages, 3)
-    elseif item.item == 250303 then
-        table.insert(unlockedStages, 4)
-    elseif item.item == 250304 then
-        table.insert(unlockedStages, 5)
     end
 end
 
-function skipStage(offset)
-    local nextProg = math.fmod(stageProg + offset, 6)
+-- Skips current stage to next unlocked stage
+function skipStage(stageProg)
+    local nextProg = math.fmod(stageProg, 5) + 1
+    print("nextProg = " .. nextProg)
 
-    if not arrayContains(unlockedStages, nextProg) then
-        nextProg = math.fmod(stageProg + 1, 6)
+    while not arrayContains(unlockedStages, nextProg) do
+        nextProg = math.fmod(nextProg, 5) + 1
+        print("new nextProg = " .. nextProg)
     end
 
     local stageTab = Stage.progression[nextProg]
-    local nextStages = getStagesUnlocked(stageTab)
+    local nextStages = getStagesUnlocked(stageTab, stageProg)
 
     misc.director:set("enemy_buff", misc.director:get("enemy_buff") - 0.45)
     misc.director:set("stages_passed", misc.director:get("stages_passed") - 1)
     Stage.transport(nextStages[math.random(nextStages:len())])
 end
 
-function getStagesUnlocked(progression)
-    local stages = progression
-
+-- Checks if stages are unlocked for the given progression level
+function getStagesUnlocked(progression, stageProg)
     for _, map in ipairs(progression:toTable()) do
         if not arrayContains(unlockedMaps, map:getName()) then
             progression:remove(map)
         end
     end
+    print(progression)
 
     if progression:len() == 0 then
-        local nextProg = math.fmod(stageProg + 1, 6)
+        local nextProg = math.fmod(stageProg, 5) + 1
 
-        if not arrayContains(unlockedStages, nextProg) then
-            nextProg = math.fmod(stageProg + 1, 6)
+        while not arrayContains(unlockedStages, nextProg) do
+            nextProg = math.fmod(nextProg, 5) + 1
         end
 
-        misc.
-        stages = getStagesUnlocked(Stage.progression[nextProg]:toTable())
+        progression = getStagesUnlocked(Stage.progression[nextProg]:toTable())
     end
 
     return progression
-end
-
-function sendItemUniversal(itemInst)
-    locationsChecked = {}
-
-    if slotData.itemPickupStep == pickupStep then
-        table.insert(locationsChecked, ap.missing_locations[1])
-        ap:LocationChecks(locationsChecked)
-        itemInst:destroy()
-        pickupStep = 0
-    else 
-        pickupStep = pickupStep + 1
-    end
-end
-
-function sendItemMap(itemInst)
-    locationsChecked = {}
-    map = Stage.getCurrentStage():getName()
-
-    if slotData.itemPickupStep == pickupStep then
-        table.insert(locationsChecked, table.remove(mapgroup[map]))
-        ap:LocationChecks(locationsChecked)
-        itemInst:destory()
-        pickupStep = 0
-    else
-        pickupStep = pickupStep + 1
-    end
 end
