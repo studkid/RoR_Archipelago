@@ -36,7 +36,7 @@ local teleFrags = 0
 
 local unlockedMaps = {}
 local unlockedStages = {1, 6}
-local lastStage = 0
+local lastStage = -1
 
 -----------------------------------------------------------------------
 -- AP Client Handling                                                --
@@ -312,18 +312,41 @@ end)
 callback.register("onGameEnd", function()
     runStarted = false
     playerInst = nil
+    lastStage = -1
 end)
 
+-- Run stage skip for frag hunt/non universal grouping
 callback.register("onStageEntry", function()
     local stage = Stage.getCurrentStage()
-    local stageProg = getStageProg(stage)
+    local teleObj = Object.find("Teleporter", "vanilla")
+    local teleInst = teleObj:find(1)
 
-	if (stage == Stage.find("Risk of Rain") and slotData.requiredFrags >= teleFrags) then
-        skipStage(lastStage + 1)
+    -- Lock final stage
+    if teleInst ~= nil and slotData.requiredFrags <= teleFrags and not arrayContains(unlockedMaps, "Risk of Rain") then
+        teleInst:set("epic", 0)
+    else
+        teleInst:set("epic", 1)
     end
 
-    if not arrayContains(unlockedMaps, stage:getName()) or not arrayContains(unlockedStages, stageProg) and slotData.grouping ~= 0 then
-        skipStage(stageProg - 1)
+    -- New Run check
+    -- TODO Make this better :pleading_face:
+    if not arrayContains(unlockedMaps, stage:getName()) and lastStage == -1 and slotData.grouping ~= 0 then
+        skipStage(0)
+
+    -- Stage unlock check
+    elseif not arrayContains(unlockedStages, getStageProg(stage)) then
+        if not tele or not tele:isValid() then
+            tele = teleObj:create(-10, -10)
+        end
+        if tele:get("active") < 4 then
+            tele:set("active", 4)
+            misc.director:set("enemy_buff", misc.director:get("enemy_buff") - 0.45)
+            misc.director:set("stages_passed", misc.director:get("stages_passed") - 1)
+        end
+
+    -- Map unlock check
+    elseif not arrayContains(unlockedMaps, stage:getName()) and slotData.grouping ~= 0 then
+        skipStage(getStageProg(stage) - 1)
     end
 
     lastStage = getStageProg(Stage.getCurrentStage())
@@ -378,11 +401,11 @@ callback.register("onPlayerHUDDraw", function(player, hudX, hudY)
 
     -- Goal read out
     local goalString = ""
+    local stage = Stage.getCurrentStage()
 
     if slotData.grouping == 0 then
         goalString = goalString .. (slotData.totalLocations - #locationsMissing) .. "/" .. slotData.totalLocations .. " Checks Remaining.  "
-    elseif slotData.grouping == 2 and not Stage.getCurrentStage() == Stage.find("Risk of Rain") then
-        local stage = Stage.getCurrentStage()
+    elseif slotData.grouping == 2 and not stage:getName() ~= "Risk of Rain" then
         goalString = goalString .. (slotData.totalLocations - #mapgroup[stage:getName()]) .. "/" .. slotData.totalLocations .. " Checks Remaining.  "
     end
 
@@ -443,19 +466,11 @@ end
 
 -- Check stage progression
 function getStageProg(stage)
-    if Stage.progression[1]:contains(stage) then
-        return 1
-    elseif Stage.progression[2]:contains(stage) then
-        return 2
-    elseif Stage.progression[3]:contains(stage) then
-        return 3
-    elseif Stage.progression[4]:contains(stage) then
-        return 4
-    elseif Stage.progression[5]:contains(stage) then
-        return 5
-    else
-        return 6
-    end
+    for i = 1, 6 do
+		if Stage.progression[i]:contains(stage) then
+			return i
+		end
+	end
 end
 
 -- Add Message
