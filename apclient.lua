@@ -417,7 +417,42 @@ callback.register("onPlayerHUDDraw", function(player, hudX, hudY)
 
     graphics.color(Color.fromRGB(192, 192, 192))
     graphics.print(goalString, w/2, h-15, graphics.FONT_DEFAULT, graphics.ALIGN_MIDDLE)
+
+    -- Tab Menu
+    if input.checkKeyboard("tab") == input.HELD then
+        local offset = 0
+        for i, maps in ipairs(Stage.progression) do
+            stageColor(i)
+            graphics.print("----- Stage " .. i, w - 100, 10 + (10 * (i + offset)), graphics.FONT_SMALL, graphics.ALIGN_RIGHT)
+            for _, map in ipairs(maps:toTable()) do
+                offset = offset + 1
+                mapColor(map:getName())
+                if mapgroup[map:getName()] ~= nil then
+                    graphics.print(map:getName() .. ": " .. (slotData.totalLocations -  #mapgroup[map:getName()]) .. "/" .. slotData.totalLocations, w - 100, 10 + (10 * (i + offset)), graphics.FONT_SMALL, graphics.ALIGN_RIGHT)
+                else
+                    graphics.print(map:getName(), w - 100, 10 + (10 * (i + offset)), graphics.FONT_SMALL, graphics.ALIGN_RIGHT)
+                end
+            end
+        end
+
+    end
 end)
+
+function stageColor(stage)
+    if arrayContains(unlockedStages, stage) then
+        graphics.color(Color.fromHex(0x14ee00))
+    else
+        graphics.color(Color.fromHex(0xfd0000))
+    end
+end
+
+function mapColor(map)
+    if arrayContains(unlockedMaps, map) then
+        graphics.color(Color.fromHex(0x14ee00))
+    else
+        graphics.color(Color.fromHex(0xfd0000))
+    end
+end
 
 -----------------------------------------------------------------------
 -- Helper functions                                                  --
