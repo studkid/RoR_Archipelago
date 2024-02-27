@@ -320,12 +320,13 @@ callback.register("onStageEntry", function()
     local stage = Stage.getCurrentStage()
     local teleObj = Object.find("Teleporter", "vanilla")
     local teleInst = teleObj:find(1)
+    print(teleInst ~= nil and slotData.requiredFrags <= teleFrags and not arrayContains(unlockedMaps, "Risk of Rain"))
 
     -- Lock final stage
     if teleInst ~= nil and slotData.requiredFrags <= teleFrags and not arrayContains(unlockedMaps, "Risk of Rain") then
-        teleInst:set("epic", 0)
-    else
         teleInst:set("epic", 1)
+    else
+        teleInst:set("epic", 0)
     end
 
     -- New Run check
