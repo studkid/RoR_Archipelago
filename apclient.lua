@@ -329,7 +329,7 @@ callback.register("onStageEntry", function()
     end
 
     -- New Run check
-    -- TODO Make this better :pleading_face:
+    -- TODO Make this better I swear this is abysmal I hate this :pleading_face:
     if not arrayContains(unlockedMaps, stage:getName()) and lastStage == -1 and slotData.grouping ~= 0 then
         skipStage(0)
 
@@ -562,7 +562,6 @@ function getStagesUnlocked(progression, stageProg)
             progression:remove(map)
         end
     end
-    print(progression)
 
     if progression:len() == 0 then
         local nextProg = math.fmod(stageProg, 5) + 1
@@ -571,7 +570,7 @@ function getStagesUnlocked(progression, stageProg)
             nextProg = math.fmod(nextProg, 5) + 1
         end
 
-        progression = getStagesUnlocked(Stage.progression[nextProg]:toTable())
+        progression = getStagesUnlocked(Stage.progression[nextProg], nextProg)
     end
 
     return progression
