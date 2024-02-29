@@ -383,7 +383,7 @@ local drawConnected = function()
 end
 
 -- Draws connection status on menu
-callback.register("globalStep", function(room)
+callback.register("globalRoomStart", function(room)
     local roomName = room:getName()
     local title = {"Start", "Select", "SelectCoop"}
 
