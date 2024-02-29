@@ -219,6 +219,8 @@ end)
 -- Save the player instance to a local variable
 callback.register("onPlayerInit", function(playerInstance)
     playerInst = playerInstance
+    -- local playerData = playerInstance:getData()
+    -- playerData.overrideStage = nil
 end)
 
 -- Give player collected items between runs
@@ -242,6 +244,17 @@ callback.register("onPlayerLevelUp", function(player)
     end
 end)
 
+--[[callback.register("onPlayerStep", function(player)
+    local playerData = player:getData()
+    if playerData == 1 then
+        if misc.HUD:get("gold") == 0 then --and not Object.find("EfExp"):find(1) then
+			Object.find("Teleporter"):find(1):set("active", 3)
+			if not Object.find("EfExp"):find(1) then
+				Stage.transport(playerData.overrideStage)
+			end
+		end
+    end
+end) ]]
 
 callback.register("onStep", function()
     -- Combat Trap Handler
@@ -320,14 +333,18 @@ callback.register("onStageEntry", function()
     local stage = Stage.getCurrentStage()
     local teleObj = Object.find("Teleporter", "vanilla")
     local teleInst = teleObj:find(1)
-    print(teleInst ~= nil and slotData.requiredFrags <= teleFrags and not arrayContains(unlockedMaps, "Risk of Rain"))
 
     -- Lock final stage
     if teleInst ~= nil and slotData.requiredFrags <= teleFrags and not arrayContains(unlockedMaps, "Risk of Rain") then
         teleInst:set("epic", 1)
-    else
+    elseif teleInst ~= nil then
         teleInst:set("epic", 0)
     end
+
+    --[[ for _, player in ipairs(misc.players) do
+        local playerData = player:getData()
+        playerData.overrideStage = skipStage(getStageProg(stage) - 1)
+    end ]]
 
     -- New Run check
     -- TODO Make this better I swear this is abysmal I hate this :pleading_face:
@@ -335,7 +352,7 @@ callback.register("onStageEntry", function()
         skipStage(0)
 
     -- Stage unlock check
-    elseif not arrayContains(unlockedStages, getStageProg(stage)) then
+    elseif not arrayContains(unlockedStages, getStageProg(stage)) then 
         if not tele or not tele:isValid() then
             tele = teleObj:create(-10, -10)
         end
@@ -406,7 +423,7 @@ callback.register("onPlayerHUDDraw", function(player, hudX, hudY)
 
     if slotData.grouping == 0 then
         goalString = goalString .. (slotData.totalLocations - #locationsMissing) .. "/" .. slotData.totalLocations .. " Checks Remaining.  "
-    elseif slotData.grouping == 2 and not stage:getName() ~= "Risk of Rain" then
+    elseif slotData.grouping == 2 and stage:getName() ~= "Risk of Rain" then
         goalString = goalString .. (slotData.totalLocations - #mapgroup[stage:getName()]) .. "/" .. slotData.totalLocations .. " Checks Remaining.  "
     end
 
@@ -589,6 +606,7 @@ function skipStage(stageProg)
     misc.director:set("enemy_buff", misc.director:get("enemy_buff") - 0.45)
     misc.director:set("stages_passed", misc.director:get("stages_passed") - 1)
     Stage.transport(nextStages[math.random(nextStages:len())])
+    -- return nextStages[math.random(nextStages:len())]
 end
 
 -- Checks if stages are unlocked for the given progression level
