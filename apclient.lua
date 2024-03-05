@@ -107,8 +107,14 @@ function connect(server, slot, password)
                 elseif item.item == 250305 then
                     table.insert(unlockedStages, 5)
                 end
+                if runStarted == true then
+                    refreshOverride()
+                end
             else
                 table.insert(unlockedMaps, ap:get_item_name(item.item))
+                if runStarted == true then
+                    refreshOverride()
+                end
             end
         end
         skipItemSend = false
@@ -348,11 +354,8 @@ callback.register("onStageEntry", function()
         teleInst:set("epic", 0)
     end
 
-    for _, player in ipairs(misc.players) do
-        local playerData = player:getData()
-        print(skipStage(getStageProg(stage)))
-        playerData.overrideStage = skipStage(getStageProg(stage))
-    end 
+    -- Find next stage
+    refreshOverride()
 
     -- New Run check
     if not arrayContains(unlockedMaps, stage:getName()) and lastStage == -1 and slotData.grouping == 2 then
@@ -595,9 +598,6 @@ function skipStage(stageProg)
     local stageTab = Stage.progression[nextProg]
     local nextStages = getStagesUnlocked(stageTab, stageProg)
 
-    -- misc.director:set("enemy_buff", misc.director:get("enemy_buff") - 0.45)
-    -- misc.director:set("stages_passed", misc.director:get("stages_passed") - 1)
-    -- Stage.transport(nextStages[math.random(nextStages:len())])
     return nextStages[math.random(nextStages:len())]
 end
 
@@ -620,4 +620,12 @@ function getStagesUnlocked(progression, stageProg)
     end
 
     return progression
+end
+
+function refreshOverride()
+    stage = Stage.getCurrentStage()
+    for _, player in ipairs(misc.players) do
+        local playerData = player:getData()
+        playerData.overrideStage = skipStage(getStageProg(stage))
+    end 
 end
