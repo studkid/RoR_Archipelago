@@ -205,8 +205,6 @@ callback.register("onLoad", function(item)
     end
     
 	connect(server, slot, password)
-
-    print(math.fmod(12, 6))
 end)
 
 -- Runs poll() every game tick
@@ -219,8 +217,8 @@ end)
 -- Save the player instance to a local variable
 callback.register("onPlayerInit", function(playerInstance)
     playerInst = playerInstance
-    -- local playerData = playerInstance:getData()
-    -- playerData.overrideStage = nil
+    local playerData = playerInstance:getData()
+    playerData.overrideStage = nil
 end)
 
 -- Give player collected items between runs
@@ -244,17 +242,26 @@ callback.register("onPlayerLevelUp", function(player)
     end
 end)
 
---[[callback.register("onPlayerStep", function(player)
+callback.register("onPlayerStep", function(player)
     local playerData = player:getData()
-    if playerData == 1 then
-        if misc.HUD:get("gold") == 0 then --and not Object.find("EfExp"):find(1) then
-			Object.find("Teleporter"):find(1):set("active", 3)
+    local teleporter = Object.find("Teleporter"):find(1)
+
+    if teleporter ~= nil and teleporter:get("active") == 4 then
+        playerData.teleport = 1
+    end
+    
+    if playerData.teleport == 1 then
+        if misc.HUD:get("gold") == 0 then
+            print("Teleporting!")
+			teleporter:set("active", 3)
 			if not Object.find("EfExp"):find(1) then
+                print("Transporting!")
 				Stage.transport(playerData.overrideStage)
+                playerData.teleport = 0
 			end
 		end
     end
-end) ]]
+end)
 
 callback.register("onStep", function()
     -- Combat Trap Handler
@@ -335,36 +342,21 @@ callback.register("onStageEntry", function()
     local teleInst = teleObj:find(1)
 
     -- Lock final stage
-    if teleInst ~= nil and slotData.requiredFrags <= teleFrags and not arrayContains(unlockedMaps, "Risk of Rain") then
+    if teleInst ~= nil and slotData.requiredFrags <= teleFrags and arrayContains(unlockedMaps, "Risk of Rain") then
         teleInst:set("epic", 1)
     elseif teleInst ~= nil then
         teleInst:set("epic", 0)
     end
 
-    --[[ for _, player in ipairs(misc.players) do
+    for _, player in ipairs(misc.players) do
         local playerData = player:getData()
-        playerData.overrideStage = skipStage(getStageProg(stage) - 1)
-    end ]]
+        print(skipStage(getStageProg(stage)))
+        playerData.overrideStage = skipStage(getStageProg(stage))
+    end 
 
     -- New Run check
-    -- TODO Make this better I swear this is abysmal I hate this :pleading_face:
-    if not arrayContains(unlockedMaps, stage:getName()) and lastStage == -1 and slotData.grouping ~= 0 then
-        skipStage(0)
-
-    -- Stage unlock check
-    elseif not arrayContains(unlockedStages, getStageProg(stage)) then 
-        if not tele or not tele:isValid() then
-            tele = teleObj:create(-10, -10)
-        end
-        if tele:get("active") < 4 then
-            tele:set("active", 4)
-            misc.director:set("enemy_buff", misc.director:get("enemy_buff") - 0.45)
-            misc.director:set("stages_passed", misc.director:get("stages_passed") - 1)
-        end
-
-    -- Map unlock check
-    elseif not arrayContains(unlockedMaps, stage:getName()) and slotData.grouping ~= 0 then
-        skipStage(getStageProg(stage) - 1)
+    if not arrayContains(unlockedMaps, stage:getName()) and lastStage == -1 and slotData.grouping == 2 then
+        Stage.transport(skipStage(0))
     end
 
     lastStage = getStageProg(Stage.getCurrentStage())
@@ -593,20 +585,20 @@ end
 -- Skips current stage to next unlocked stage
 function skipStage(stageProg)
     local nextProg = math.fmod(stageProg, 5) + 1
-    print("nextProg = " .. nextProg)
+    -- print("nextProg = " .. nextProg)
 
     while not arrayContains(unlockedStages, nextProg) do
         nextProg = math.fmod(nextProg, 5) + 1
-        print("new nextProg = " .. nextProg)
+        -- print("new nextProg = " .. nextProg)
     end
 
     local stageTab = Stage.progression[nextProg]
     local nextStages = getStagesUnlocked(stageTab, stageProg)
 
-    misc.director:set("enemy_buff", misc.director:get("enemy_buff") - 0.45)
-    misc.director:set("stages_passed", misc.director:get("stages_passed") - 1)
-    Stage.transport(nextStages[math.random(nextStages:len())])
-    -- return nextStages[math.random(nextStages:len())]
+    -- misc.director:set("enemy_buff", misc.director:get("enemy_buff") - 0.45)
+    -- misc.director:set("stages_passed", misc.director:get("stages_passed") - 1)
+    -- Stage.transport(nextStages[math.random(nextStages:len())])
+    return nextStages[math.random(nextStages:len())]
 end
 
 -- Checks if stages are unlocked for the given progression level

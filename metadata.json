@@ -2,7 +2,7 @@
     "name": "Archipelago Randomizer",
     "description": "Adds support for archipelago multiworld to Risk of Rain",
 	"internalname": "APRando",
-    "version": "0.2",
+    "version": "0.3.1",
     "author": "studkid",
 	"mpcompat": false,
 	"options": [
