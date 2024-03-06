@@ -1,4 +1,5 @@
 require("staticvars")
+stagePortal = require("stageportal")
 
 local server = ""
 local slot = ""
@@ -6,6 +7,7 @@ local password = ""
 local connectionMessage = "Connecting..."
 local messageQueue = {}
 local initialSetup = false
+local deathLink = false
 
 local itemsCollected = {}
 local itemsBuffer = {}
@@ -38,6 +40,7 @@ local teleFrags = 0
 local unlockedMaps = {}
 local unlockedStages = {1, 6}
 local lastStage = -1
+local portalSpawned = false
 
 -----------------------------------------------------------------------
 -- AP Client Handling                                                --
@@ -84,11 +87,13 @@ function connect(server, slot, password)
             end
         end
 
-        print(pickupStepOveride)
         if pickupStepOveride == -1 then
             pickupStepOveride = data.itemPickupStep
         end
-        print(pickupStepOveride)
+
+        if deathLink == true then
+            ap:ConnectUpdate(nil, { "Lua-APClientPP", "DeathLink" })
+        end
     end
 
     function on_slot_refused(reasons)
@@ -221,7 +226,11 @@ callback.register("onLoad", function(item)
             if i ~= nil then
                 pickupStepOveride = i
             end
+
+        elseif string.find(flag, "ap_deathlink") then
+            deathLink = true
         end
+        
     end
     
 	connect(server, slot, password)
@@ -298,9 +307,40 @@ callback.register("onStep", function()
             teleFrags = teleFrags + 1
         end
     end
+
+    -- Stage Portals
+    local teleInst = Object.find("Teleporter"):find(1)
+    local B = Object.find("B", "vanilla")
+    local BInst = B:findNearest(teleInst.x, teleInst.y)
+
+    if teleInst ~= nil and teleInst:get("active") == 3 and not portalSpawned then
+        local nextStages = skipStage(getStageProg(Stage.getCurrentStage()))
+        
+        if nextStages:len() > 1 then
+            for i, stage in ipairs(nextStages:toTable()) do
+                local portal = nil 
+                if i % 2 == 0 then
+                    portal = stagePortal:create(teleInst.x - (45 * ((i / 2))), teleInst.y - 20)
+                else
+                    portal = stagePortal:create(teleInst.x + (45 * ((i / 2) + .5)), teleInst.y - 20)
+                end
+
+                portal:set("stage", nextStages[i]:getName())
+
+                -- for j = 0, 500 do
+                --     if B:collidesMap(portal.x, portal.y + j) then
+                --         portal.y = portal.y + j - 1
+                --         break
+                --     end
+                -- end
+            end
+        end
+
+        portalSpawned = 1
+    end
 end)
 
--- Location checker
+-- L`ocation checker
 -- TODO Add alternative "onItemPickup" callback when starstorm is used?
 callback.register("onItemInit", function(itemInst)
     local item = itemInst:getItem()
@@ -358,6 +398,7 @@ callback.register("onStageEntry", function()
     local stage = Stage.getCurrentStage()
     local teleObj = Object.find("Teleporter", "vanilla")
     local teleInst = teleObj:find(1)
+    portalSpawned = false
 
     -- Lock final stage
     if teleInst ~= nil and slotData.requiredFrags <= teleFrags and arrayContains(unlockedMaps, "Risk of Rain") then
@@ -371,7 +412,8 @@ callback.register("onStageEntry", function()
 
     -- New Run check
     if not arrayContains(unlockedMaps, stage:getName()) and lastStage == -1 and slotData.grouping == 2 then
-        Stage.transport(skipStage(0))
+        local nextStages = skipStage(getStageProg(stage))
+        Stage.transport(nextStages[math.random(nextStages:len())])
     end
 
     lastStage = getStageProg(Stage.getCurrentStage())
@@ -608,9 +650,7 @@ function skipStage(stageProg)
     end
 
     local stageTab = Stage.progression[nextProg]
-    local nextStages = getStagesUnlocked(stageTab, stageProg)
-
-    return nextStages[math.random(nextStages:len())]
+    return getStagesUnlocked(stageTab, stageProg)
 end
 
 -- Checks if stages are unlocked for the given progression level
@@ -638,6 +678,7 @@ function refreshOverride()
     stage = Stage.getCurrentStage()
     for _, player in ipairs(misc.players) do
         local playerData = player:getData()
-        playerData.overrideStage = skipStage(getStageProg(stage))
+        local nextStages = skipStage(getStageProg(stage))
+        playerData.overrideStage = nextStages[math.random(nextStages:len())]
     end 
 end

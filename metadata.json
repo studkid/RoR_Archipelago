@@ -25,6 +25,10 @@
             "name" : "Pickup Step Override:",
             "flag" : "ap_pickup_",
             "text" : true
+        },
+        {
+            "name" : "Death Link Override:",
+            "flag" : "ap_deathlink"
         }
 	]
 }
