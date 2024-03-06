@@ -258,10 +258,8 @@ callback.register("onPlayerStep", function(player)
     
     if playerData.teleport == 1 then
         if misc.HUD:get("gold") == 0 then
-            print("Teleporting!")
-			teleporter:set("active", 3)
+			teleporter:set("active", 5)
 			if not Object.find("EfExp"):find(1) then
-                print("Transporting!")
 				Stage.transport(playerData.overrideStage)
                 playerData.teleport = 0
 			end
