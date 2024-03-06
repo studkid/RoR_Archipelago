@@ -290,6 +290,15 @@ callback.register("onPlayerStep", function(player)
     end
 end)
 
+callback.register("onPlayerDeath", function()
+    if not deathLink then return end
+
+    ap:Bounce({
+        cause = slot .. " has died.",
+        source = slot,
+    }, nil, nil, {"DeathLink"})
+end)
+
 callback.register("onStep", function()
     -- Combat Trap Handler
     if misc.director:getAlarm(1) > 1 and combatQueue > 0 then
