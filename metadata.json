@@ -20,6 +20,11 @@
             "name" : "Password:",
             "flag" : "ap_password_",
             "text" : true
+        },
+        {
+            "name" : "Pickup Step Override:",
+            "flag" : "ap_pickup_",
+            "text" : true
         }
 	]
 }

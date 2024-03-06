@@ -32,6 +32,7 @@ local combatQueue = 0
 local scale = 0
 local expQueue = 0
 local pickupStep = 0
+local pickupStepOveride = -1
 local teleFrags = 0
 
 local unlockedMaps = {}
@@ -82,6 +83,12 @@ function connect(server, slot, password)
                 table.insert(mapgroup[map], 1, loc)
             end
         end
+
+        print(pickupStepOveride)
+        if pickupStepOveride == -1 then
+            pickupStepOveride = data.itemPickupStep
+        end
+        print(pickupStepOveride)
     end
 
     function on_slot_refused(reasons)
@@ -206,6 +213,13 @@ callback.register("onLoad", function(item)
             local s = string.gsub(flag, "ap_password_", "")
             if type(s) == "string" then
                 password = s
+            end
+
+        elseif string.find(flag, "ap_pickup_") then
+            local s = string.gsub(flag, "ap_pickup_", "")
+            local i = tonumber(s)
+            if i ~= nil then
+                pickupStepOveride = i
             end
         end
     end
@@ -420,7 +434,7 @@ callback.register("onPlayerHUDDraw", function(player, hudX, hudY)
         goalString = goalString .. (slotData.totalLocations - #mapgroup[stage:getName()]) .. "/" .. slotData.totalLocations .. " Checks Remaining.  "
     end
 
-    goalString = goalString .. "Step Progression: " .. pickupStep .. "/" .. slotData.itemPickupStep.. "  "
+    goalString = goalString .. "Step Progression: " .. pickupStep .. "/" .. pickupStepOveride.. "  "
 
     if slotData.requiredFrags > 0 then
         goalString = goalString .. teleFrags .. "/" .. slotData.requiredFrags .. " Fragments Remaining.  "
