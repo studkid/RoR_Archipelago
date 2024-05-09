@@ -462,7 +462,7 @@ callback.register("onStageEntry", function()
 
     -- New Run check
     if not arrayContains(unlockedMaps, stage:getName()) and lastStage == -1 and slotData.grouping == 2 then
-        local nextStages = skipStage(getStageProg(stage))
+        local nextStages = skipStage(0)
         Stage.transport(nextStages[math.random(nextStages:len())])
     end
 
@@ -676,8 +676,8 @@ function giveItem(item)
 
     -- Traps
     elseif item.item == 250201 then -- Time Warp
-        misc.hud:set("minute", misc.hud:get("minute") + 5)
-        misc.director:set("enemy_buff", misc.director:get("enemy_buff") + (Difficulty.getActive().scale * 5))
+        misc.hud:set("minute", misc.hud:get("minute") + 2)
+        misc.director:set("enemy_buff", misc.director:get("enemy_buff") + (Difficulty.getActive().scale * 2))
     elseif item.item == 250202 and runStarted then -- Combat
         combatQueue = combatQueue + 5
     elseif item.item == 250203 and runStarted then -- Meteor
