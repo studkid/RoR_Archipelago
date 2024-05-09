@@ -319,29 +319,35 @@ callback.register("onStep", function()
 
     -- Stage Portals
     local teleInst = Object.find("Teleporter"):find(1)
-    local B = Object.find("B", "vanilla")
-    local BInst = B:findNearest(teleInst.x, teleInst.y)
 
     if teleInst ~= nil and teleInst:get("active") == 3 and not portalSpawned then
         local nextStages = skipStage(getStageProg(Stage.getCurrentStage()))
+        local offset = 0
+
+        local B = Object.find("B", "vanilla")
+        local BInst = B:findNearest(teleInst.x, teleInst.y)
+        local leftBound = BInst.x
+        local rightBound = BInst.x + BInst.xscale * 16
+        print(leftBound .. " " .. rightBound)
         
         if nextStages:len() > 1 then
             for i, stage in ipairs(nextStages:toTable()) do
-                local portal = nil 
+                local portal = nil
                 if i % 2 == 0 then
-                    portal = stagePortal:create(teleInst.x - (45 * ((i / 2))), teleInst.y - 20)
+                    portal = stagePortal:create(teleInst.x - (45 * ((i / 2) + offset)), teleInst.y - 20)
                 else
-                    portal = stagePortal:create(teleInst.x + (45 * ((i / 2) + .5)), teleInst.y - 20)
+                    portal = stagePortal:create(teleInst.x + (45 * ((i / 2) + .5 + offset)), teleInst.y - 20)
                 end
 
                 portal:set("stage", nextStages[i]:getName())
 
-                -- for j = 0, 500 do
-                --     if B:collidesMap(portal.x, portal.y + j) then
-                --         portal.y = portal.y + j - 1
-                --         break
-                --     end
-                -- end
+                if portal.x < leftBound then
+                    portal.x = teleInst.x + (45 * ((i / 2) + 1 + offset))
+                    offset = offset + 1
+                elseif portal.x > rightBound then
+                    portal.x = teleInst.x -  (45 * ((i / 2) + 0.5 + offset))
+                    offset = offset + 1
+                end
             end
         end
 
@@ -349,7 +355,7 @@ callback.register("onStep", function()
     end
 end)
 
--- L`ocation checker
+-- Location checker
 -- TODO Add alternative "onItemPickup" callback when starstorm is used?
 callback.register("onItemInit", function(itemInst)
     local item = itemInst:getItem()
