@@ -396,7 +396,7 @@ callback.register("onItemInit", function(itemInst)
     local item = itemInst:getItem()
     local map = Stage.getCurrentStage():getName()
 
-    if connected and not item.isUseItem then
+    if connected and not item.isUseItem and map ~= "Risk of Rain" then
         if slotData.grouping == 0 and #locationsMissing ~= 0 then
             locationsChecked = {}
 
