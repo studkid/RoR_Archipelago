@@ -457,7 +457,7 @@ callback.register("onItemInit", function(itemInst)
         if slotData.grouping == 0 and #locationsMissing ~= 0 then
             locationsChecked = {}
 
-            if slotData.itemPickupStep == pickupStep then
+            if pickupStepOveride == pickupStep then
                 table.insert(locationsChecked, ap.missing_locations[1])
                 ap:LocationChecks(locationsChecked)
                 itemInst:destroy()
@@ -469,7 +469,7 @@ callback.register("onItemInit", function(itemInst)
             locationsChecked = {}
             map = Stage.getCurrentStage():getName()
 
-            if slotData.itemPickupStep == pickupStep then
+            if pickupStepOveride == pickupStep then
                 table.insert(locationsChecked, table.remove(mapgroup[map]))
                 ap:LocationChecks(locationsChecked)
                 itemInst:destroy()
@@ -585,7 +585,9 @@ callback.register("onPlayerHUDDraw", function(player, hudX, hudY)
         goalString = goalString .. (slotData.totalLocations - #mapgroup[stage:getName()]) .. "/" .. slotData.totalLocations .. " Checks Remaining.  "
     end
 
-    goalString = goalString .. "Step Progression: " .. pickupStep .. "/" .. pickupStepOveride.. "  "
+    if(pickupStepOveride > 0) then
+        goalString = goalString .. "Step Progression: " .. pickupStep .. "/" .. pickupStepOveride.. "  "
+    end
 
     if slotData.requiredFrags > 0 then
         goalString = goalString .. teleFrags .. "/" .. slotData.requiredFrags .. " Fragments Remaining.  "
