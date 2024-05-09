@@ -160,7 +160,7 @@ function connect(server, slot, password)
         if extra["type"] == "ItemSend" then
             for _, str in ipairs(msg) do
                 if str.type == "player_id" then -- Player ID Color
-                    local pName = ap:get_player_alias(str.text)
+                    local pName = ap:get_player_alias(str.text):gsub("&", "and")
                     if str.text == curPlayerSlot then
                         newMsg = newMsg .. "&p&"
                     else
@@ -169,7 +169,7 @@ function connect(server, slot, password)
                     newMsg = newMsg .. pName .. "&!&"
                     
                 elseif str.type == "item_id" then -- Item ID Color
-                    local itemName = ap:get_item_name(str.text)
+                    local itemName = ap:get_item_name(str.text):gsub("&", "and")
                     if str.flags == 4 then
                         newMsg = newMsg .. "&r&"
                     elseif str.flags == 1 then
@@ -180,13 +180,13 @@ function connect(server, slot, password)
                     newMsg = newMsg .. itemName .. "&!&"
 
                 elseif str.type == "location_id" then -- Location ID Color
-                    newMsg = newMsg .. "&g&" .. ap:get_location_name(str.text)
+                    newMsg = newMsg .. "&g&" .. ap:get_location_name(str.text):gsub("&", "and")
                 else
                     newMsg = newMsg .. str.text
                 end
             end
         else
-            newMsg = ap:render_json(msg, message_format)
+            newMsg = ap:render_json(msg, message_format):gsub("&", "and")
         end
 
         print(newMsg)
