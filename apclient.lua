@@ -72,7 +72,6 @@ function connect(server, slot, password)
         print("Slot connected")
         connectionMessage = "&g&Socket connected!&!&"
         slotData = data
-        print(slotData)
         
         curPlayerSlot = ap:get_player_number()
         connected = true
@@ -154,8 +153,43 @@ function connect(server, slot, password)
     end
 
     function on_print_json(msg, extra)
-        print(ap:render_json(msg, message_format))
-        table.insert(messageQueue, ap:render_json(msg, message_format))
+        local newMsg = ""
+        print(msg)
+
+        if extra["type"] == "ItemSend" then
+            for _, str in ipairs(msg) do
+                if str.type == "player_id" then -- Player ID Color
+                    local pName = ap:get_player_alias(str.text)
+                    if str.text == curPlayerSlot then
+                        newMsg = newMsg .. "&p&"
+                    else
+                        newMsg = newMsg .. "&y&"
+                    end
+                    newMsg = newMsg .. pName .. "&!&"
+                    
+                elseif str.type == "item_id" then -- Item ID Color
+                    local itemName = ap:get_item_name(str.text)
+                    if str.flags == 4 then
+                        newMsg = newMsg .. "&r&"
+                    elseif str.flags == 1 then
+                        newMsg = newMsg .. "&g&"
+                    else
+                        newMsg = newMsg .. "&b&"
+                    end
+                    newMsg = newMsg .. itemName .. "&!&"
+
+                elseif str.type == "location_id" then -- Location ID Color
+                    newMsg = newMsg .. "&g&" .. ap:get_location_name(str.text)
+                else
+                    newMsg = newMsg .. str.text
+                end
+            end
+        else
+            newMsg = ap:render_json(msg, message_format)
+        end
+
+        print(newMsg)
+        table.insert(messageQueue, newMsg)
     end
 
     function on_bounced(bounce)
@@ -465,7 +499,7 @@ callback.register("onPlayerHUDDraw", function(player, hudX, hudY)
     for i, msg in pairs(messageQueue) do
         if i < 6 then
             graphics.color(Color.fromRGB(192, 192, 192))
-            graphics.print(msg, 10, 25 + (10 * i), graphics.FONT_SMALL)
+            graphics.printColor(msg, 10, 25 + (10 * i), graphics.FONT_SMALL)
         else
             table.remove(messageQueue, 1)
             msgTimer = 500
