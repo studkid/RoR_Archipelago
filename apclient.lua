@@ -359,37 +359,83 @@ callback.register("onStep", function()
         local nextStages = skipStage(getStageProg(Stage.getCurrentStage()))
         local offset = 0
 
+        local portalX = 0
+        local portalY = 0
+
         local B = Object.find("B", "vanilla")
         local BInst = B:findNearest(teleInst.x, teleInst.y)
         local leftBound = BInst.x
         local rightBound = BInst.x + BInst.xscale * 16
         -- print(leftBound .. " " .. rightBound)
 
-        portal = stagePortal:create(teleInst.x - 45, teleInst.y - 20)
+        if teleInst.x - 65 > leftBound then
+            print("Left Good")
+            portalX = teleInst.x - 65
+            portalY = BInst.y + BInst.yscale * 16
+        elseif teleInst.y + 65 < rightBound then
+            print("Right Good")
+            portalX = teleInst.x + 65
+            portalY = BInst.y
+        else
+            local newBInst = B:findNearest(leftBound - 100, BInst.y)
+
+            if newBInst ~= BInst then
+                print("Left nearby B good")
+                portalX = newBInst.x + newBInst.xscale * 16 - 10
+                portalY = newBInst.y + 24
+            else
+                portalY = BInst.y + 500
+            end
+
+            while portalX == 0 do
+                local newBInst = B:findNearest(leftBound - 100, portalY)
+
+                if newBInst ~= BInst then 
+                    print("Left scan B good")
+                    portalX = newBInst.x + newBInst.xscale * 16 - 10
+                    portalY = BInst.y + 24
+                end
+
+                portalY = portalY - 100
+
+                if portalY < 0 then
+                    break
+                end
+            end
+
+            if portalX == 0 then
+                local newBInst = B:findNearest(leftBound + 100, BInst.y)
+
+                if newBInst ~= BInst then
+                    print("Right nearby B good")
+                    portalX = newBInst.x + 10
+                    portalY = newBInst.y + 24
+                else
+                    portalY = BInst.y + 500
+                end
+
+                while portalX == 0 do
+                    local newBInst = B:findNearest(leftBound - 100, portalY)
+
+                    if newBInst ~= BInst then 
+                        print("Left scan B good")
+                        portalX = newBInst.x + 10
+                        portalY = BInst.y + 24
+                    end
+
+                    portalY = portalY - 100
+
+                    if portalY < 0 then
+                        break
+                    end
+                end
+            end
+        end
+
         portalStages = nextStages
-        
-        -- if #nextStages > 1 then
-        --     for i, stage in ipairs(nextStages) do
-        --         local portal = nil
-        --         if i % 2 == 0 then
-        --             portal = stagePortal:create(teleInst.x - (45 * ((i / 2) + offset)), teleInst.y - 20)
-        --         else
-        --             portal = stagePortal:create(teleInst.x + (45 * ((i / 2) + .5 + offset)), teleInst.y - 20)
-        --         end
+        portal = stagePortal:create(portalX, portalY)   
 
-        --         portal:set("stage", nextStages[i]:getName())
-
-        --         if portal.x < leftBound then
-        --             portal.x = teleInst.x + (45 * ((i / 2) + 1 + offset))
-        --             offset = offset + 1
-        --         elseif portal.x > rightBound then
-        --             portal.x = teleInst.x -  (45 * ((i / 2) + 0.5 + offset))
-        --             offset = offset + 1
-        --         end
-        --     end
-        -- end
-
-        portalSpawned = 1
+        portalSpawned = true
     end
 end)
 

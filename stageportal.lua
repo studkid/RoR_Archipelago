@@ -7,7 +7,6 @@ stagePortal:addCallback("create", function(self)
     local selfData = self:getData()
     self:set("active", 0)
     self:set("myplayer", -4)
-    selfData.stage = nil
     selfData.index = 1
     selfData.colBoxMult = 1
 end)
