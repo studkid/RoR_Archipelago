@@ -371,18 +371,18 @@ callback.register("onStep", function()
         if teleInst.x - 65 > leftBound then
             print("Left Good")
             portalX = teleInst.x - 65
-            portalY = BInst.y + 24
+            portalY = BInst.y - 24
         elseif teleInst.y + 65 < rightBound then
             print("Right Good")
             portalX = teleInst.x + 65
-            portalY = BInst.y + 24
+            portalY = BInst.y +- 24
         else
             local newBInst = B:findNearest(leftBound - 100, BInst.y)
 
             if newBInst ~= BInst then
                 print("Left nearby B good")
                 portalX = newBInst.x + newBInst.xscale * 16 - 10
-                portalY = newBInst.y + 24
+                portalY = newBInst.y +- 24
             else
                 portalY = BInst.y + 500
             end
@@ -393,7 +393,7 @@ callback.register("onStep", function()
                 if newBInst ~= BInst then 
                     print("Left scan B good")
                     portalX = newBInst.x + newBInst.xscale * 16 - 10
-                    portalY = BInst.y + 24
+                    portalY = BInst.y - 24
                 end
 
                 portalY = portalY - 100
@@ -409,7 +409,7 @@ callback.register("onStep", function()
                 if newBInst ~= BInst then
                     print("Right nearby B good")
                     portalX = newBInst.x + 10
-                    portalY = newBInst.y + 24
+                    portalY = newBInst.y - 24
                 else
                     portalY = BInst.y + 500
                 end
@@ -420,7 +420,7 @@ callback.register("onStep", function()
                     if newBInst ~= BInst then 
                         print("Left scan B good")
                         portalX = newBInst.x + 10
-                        portalY = BInst.y + 24
+                        portalY = BInst.y - 24
                     end
 
                     portalY = portalY - 100
