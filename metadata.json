@@ -27,8 +27,8 @@
             "text" : true
         },
         {
-            "name" : "Death Link Override:",
-            "flag" : "ap_deathlink"
+            "name" : "[Experimental] Stage Portals:",
+            "flag" : "ap_portals"
         }
 	]
 }

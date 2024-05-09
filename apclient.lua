@@ -41,6 +41,7 @@ local unlockedMaps = {}
 local unlockedStages = {1, 6}
 local lastStage = -1
 local portalSpawned = false
+local portalToggle = false
 
 -----------------------------------------------------------------------
 -- AP Client Handling                                                --
@@ -262,6 +263,9 @@ callback.register("onLoad", function(item)
                 pickupStepOveride = i
             end
 
+        elseif string.find(flag, "ap_portals") then
+            portalToggle = true
+
         elseif string.find(flag, "ap_deathlink") then
             deathLink = true
         end
@@ -359,7 +363,7 @@ callback.register("onStep", function()
     -- Stage Portals
     local teleInst = Object.find("Teleporter"):find(1)
 
-    if teleInst ~= nil and teleInst:get("active") == 3 and not portalSpawned then
+    if teleInst ~= nil and teleInst:get("active") == 3 and not portalSpawned and portalToggle then
         local nextStages = skipStage(getStageProg(Stage.getCurrentStage()))
         local offset = 0
 
