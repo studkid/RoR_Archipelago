@@ -363,28 +363,31 @@ callback.register("onStep", function()
         local BInst = B:findNearest(teleInst.x, teleInst.y)
         local leftBound = BInst.x
         local rightBound = BInst.x + BInst.xscale * 16
-        print(leftBound .. " " .. rightBound)
+        -- print(leftBound .. " " .. rightBound)
+
+        portal = stagePortal:create(teleInst.x - 45, teleInst.y - 20)
+        portalStages = nextStages
         
-        if #nextStages > 1 then
-            for i, stage in ipairs(nextStages) do
-                local portal = nil
-                if i % 2 == 0 then
-                    portal = stagePortal:create(teleInst.x - (45 * ((i / 2) + offset)), teleInst.y - 20)
-                else
-                    portal = stagePortal:create(teleInst.x + (45 * ((i / 2) + .5 + offset)), teleInst.y - 20)
-                end
+        -- if #nextStages > 1 then
+        --     for i, stage in ipairs(nextStages) do
+        --         local portal = nil
+        --         if i % 2 == 0 then
+        --             portal = stagePortal:create(teleInst.x - (45 * ((i / 2) + offset)), teleInst.y - 20)
+        --         else
+        --             portal = stagePortal:create(teleInst.x + (45 * ((i / 2) + .5 + offset)), teleInst.y - 20)
+        --         end
 
-                portal:set("stage", nextStages[i]:getName())
+        --         portal:set("stage", nextStages[i]:getName())
 
-                if portal.x < leftBound then
-                    portal.x = teleInst.x + (45 * ((i / 2) + 1 + offset))
-                    offset = offset + 1
-                elseif portal.x > rightBound then
-                    portal.x = teleInst.x -  (45 * ((i / 2) + 0.5 + offset))
-                    offset = offset + 1
-                end
-            end
-        end
+        --         if portal.x < leftBound then
+        --             portal.x = teleInst.x + (45 * ((i / 2) + 1 + offset))
+        --             offset = offset + 1
+        --         elseif portal.x > rightBound then
+        --             portal.x = teleInst.x -  (45 * ((i / 2) + 0.5 + offset))
+        --             offset = offset + 1
+        --         end
+        --     end
+        -- end
 
         portalSpawned = 1
     end
@@ -463,7 +466,7 @@ callback.register("onStageEntry", function()
     -- New Run check
     if arrayContains(unlockedMaps, stage:getName()) == nil and lastStage == -1 and slotData.grouping == 2 then
         local nextStages = skipStage(0)
-        Stage.transport(nextStages[math.random(nextStages:len())])
+        Stage.transport(nextStages[math.random(#nextStages)])
     end
 
     lastStage = getStageProg(Stage.getCurrentStage())
@@ -708,6 +711,7 @@ function getStagesUnlocked(progression, stageProg)
             table.remove(progression, arrayContains(progression, map:getName()))
         end
     end
+    print(progression)
 
     if #progression == 0 then
         local nextProg = math.fmod(stageProg, 5) + 1
