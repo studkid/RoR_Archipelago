@@ -371,11 +371,11 @@ callback.register("onStep", function()
         if teleInst.x - 65 > leftBound then
             print("Left Good")
             portalX = teleInst.x - 65
-            portalY = BInst.y + BInst.yscale * 16
+            portalY = BInst.y + 24
         elseif teleInst.y + 65 < rightBound then
             print("Right Good")
             portalX = teleInst.x + 65
-            portalY = BInst.y
+            portalY = BInst.y + 24
         else
             local newBInst = B:findNearest(leftBound - 100, BInst.y)
 
