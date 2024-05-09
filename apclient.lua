@@ -323,6 +323,10 @@ callback.register("onPlayerStep", function(player)
 			end
 		end
     end
+
+    if misc.hud:get("gold") > 0 and teleporter:get("active") == 5 then
+        teleporter:set("active", 4)
+    end
 end)
 
 callback.register("onPlayerDeath", function()
