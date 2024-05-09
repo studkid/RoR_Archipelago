@@ -513,6 +513,8 @@ callback.register("onStageEntry", function()
     if arrayContains(unlockedMaps, stage:getName()) == nil and lastStage == -1 and slotData.grouping == 2 then
         local nextStages = skipStage(0)
         Stage.transport(nextStages[math.random(#nextStages)])
+        misc.director:set("enemy_buff", misc.director:get("enemy_buff") - 0.45)
+        misc.director:set("stages_passed", misc.director:get("stages_passed") - 1)
     end
 
     lastStage = getStageProg(Stage.getCurrentStage())
