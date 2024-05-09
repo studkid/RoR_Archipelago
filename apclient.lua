@@ -6,7 +6,7 @@ local slot = ""
 local password = ""
 local connectionMessage = "Connecting..."
 local messageQueue = {}
-local initialSetup = false
+local initialSetup = true
 local deathLink = false
 
 local itemsCollected = {}
@@ -106,7 +106,8 @@ function connect(server, slot, password)
         end
 
         for _, item in ipairs(items) do 
-            if item.item < 250300 then
+            if initialSetup and (item.item == 250202 or item.item == 250203) then
+            elseif item.item < 250300 then
                 table.insert(itemsBuffer, 1, item)
             elseif item.item < 250400 then
                 if item.item == 250302 then
@@ -129,6 +130,7 @@ function connect(server, slot, password)
             end
         end
         skipItemSend = false
+        initialSetup = false
     end
 
     function on_location_info(items)
@@ -153,8 +155,7 @@ function connect(server, slot, password)
     end
 
     function on_print_json(msg, extra)
-        local newMsg = ""
-        print(msg)
+        local newMsg = "" 
 
         if extra["type"] == "ItemSend" then
             for _, str in ipairs(msg) do
