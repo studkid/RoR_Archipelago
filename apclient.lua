@@ -365,8 +365,8 @@ callback.register("onStep", function()
         local rightBound = BInst.x + BInst.xscale * 16
         print(leftBound .. " " .. rightBound)
         
-        if nextStages:len() > 1 then
-            for i, stage in ipairs(nextStages:toTable()) do
+        if #nextStages > 1 then
+            for i, stage in ipairs(nextStages) do
                 local portal = nil
                 if i % 2 == 0 then
                     portal = stagePortal:create(teleInst.x - (45 * ((i / 2) + offset)), teleInst.y - 20)
@@ -451,7 +451,7 @@ callback.register("onStageEntry", function()
     portalSpawned = false
 
     -- Lock final stage
-    if teleInst ~= nil and slotData.requiredFrags <= teleFrags and arrayContains(unlockedMaps, "Risk of Rain") then
+    if teleInst ~= nil and slotData.requiredFrags <= teleFrags and arrayContains(unlockedMaps, "Risk of Rain") ~= nil then
         teleInst:set("epic", 1)
     elseif teleInst ~= nil then
         teleInst:set("epic", 0)
@@ -461,7 +461,7 @@ callback.register("onStageEntry", function()
     refreshOverride()
 
     -- New Run check
-    if not arrayContains(unlockedMaps, stage:getName()) and lastStage == -1 and slotData.grouping == 2 then
+    if arrayContains(unlockedMaps, stage:getName()) == nil and lastStage == -1 and slotData.grouping == 2 then
         local nextStages = skipStage(0)
         Stage.transport(nextStages[math.random(nextStages:len())])
     end
@@ -486,7 +486,7 @@ callback.register("globalRoomStart", function(room)
     local roomName = room:getName()
     local title = {"Start", "Select", "SelectCoop"}
 
-    if arrayContains(title, roomName) then
+    if arrayContains(title, roomName) ~= nil then
         graphics.bindDepth(-9999, drawConnected)
     end
 end) 
@@ -551,12 +551,11 @@ callback.register("onPlayerHUDDraw", function(player, hudX, hudY)
                 end
             end
         end
-
     end
 end)
 
 function stageColor(stage)
-    if arrayContains(unlockedStages, stage) then
+    if arrayContains(unlockedStages, stage) ~= nil then
         graphics.color(Color.fromHex(0x14ee00))
     else
         graphics.color(Color.fromHex(0xfd0000))
@@ -564,7 +563,7 @@ function stageColor(stage)
 end
 
 function mapColor(map)
-    if arrayContains(unlockedMaps, map) then
+    if arrayContains(unlockedMaps, map) ~= nil then
         graphics.color(Color.fromHex(0x14ee00))
     else
         graphics.color(Color.fromHex(0xfd0000))
@@ -578,12 +577,12 @@ end
 -- Checks array for value
 -- TODO Convert existing arrays to lists instead and use it's contains function instead
 function arrayContains(tab, val)
-    for _, value in ipairs(tab) do
+    for i, value in ipairs(tab) do
         if value == val then
-            return true
+            return i
         end
     end
-    return false
+    return nil
 end
 
 -- Registers every necessary itemPool
@@ -692,33 +691,32 @@ end
 -- Skips current stage to next unlocked stage
 function skipStage(stageProg)
     local nextProg = math.fmod(stageProg, 5) + 1
-    -- print("nextProg = " .. nextProg)
 
-    while not arrayContains(unlockedStages, nextProg) do
+
+    while arrayContains(unlockedStages, nextProg) == nil do
         nextProg = math.fmod(nextProg, 5) + 1
-        -- print("new nextProg = " .. nextProg)
     end
 
     local stageTab = Stage.progression[nextProg]
-    return getStagesUnlocked(stageTab, stageProg)
+    return getStagesUnlocked(stageTab:toTable(), stageProg)
 end
 
 -- Checks if stages are unlocked for the given progression level
 function getStagesUnlocked(progression, stageProg)
-    for _, map in ipairs(progression:toTable()) do
-        if not arrayContains(unlockedMaps, map:getName()) then
-            progression:remove(map)
+    for _, map in ipairs(progression) do
+        if arrayContains(unlockedMaps, map:getName()) == nil then
+            table.remove(progression, arrayContains(progression, map:getName()))
         end
     end
 
-    if progression:len() == 0 then
+    if #progression == 0 then
         local nextProg = math.fmod(stageProg, 5) + 1
 
-        while not arrayContains(unlockedStages, nextProg) do
+        while arrayContains(unlockedStages, nextProg) == nil do
             nextProg = math.fmod(nextProg, 5) + 1
         end
 
-        progression = getStagesUnlocked(Stage.progression[nextProg], nextProg)
+        progression = getStagesUnlocked(Stage.progression[nextProg]:toTable(), nextProg)
     end
 
     return progression
@@ -729,6 +727,6 @@ function refreshOverride()
     for _, player in ipairs(misc.players) do
         local playerData = player:getData()
         local nextStages = skipStage(getStageProg(stage))
-        playerData.overrideStage = nextStages[math.random(nextStages:len())]
+        playerData.overrideStage = nextStages[math.random(#nextStages)]
     end 
 end
