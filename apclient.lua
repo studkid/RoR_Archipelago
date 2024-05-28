@@ -396,7 +396,7 @@ callback.register("onItemInit", function(itemInst)
     local item = itemInst:getItem()
     local map = Stage.getCurrentStage():getName()
 
-    if connected and not item.isUseItem and map ~= "Risk of Rain" then
+    if connected and not item.isUseItem then
         if slotData.grouping == 0 and #locationsMissing ~= 0 then
             locationsChecked = {}
 
@@ -408,7 +408,7 @@ callback.register("onItemInit", function(itemInst)
             else 
                 pickupStep = pickupStep + 1
             end
-        elseif #mapgroup[map] ~= 0 then
+        elseif #mapgroup[map] ~= 0 and map ~= "Risk of Rain" then
             locationsChecked = {}
             map = Stage.getCurrentStage():getName()
 
