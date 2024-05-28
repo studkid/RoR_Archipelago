@@ -25,10 +25,6 @@
             "name" : "Pickup Step Override:",
             "flag" : "ap_pickup_",
             "text" : true
-        },
-        {
-            "name" : "[Experimental] Stage Portals:",
-            "flag" : "ap_portals"
         }
 	]
 }

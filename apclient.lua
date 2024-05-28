@@ -1,5 +1,4 @@
 require("staticvars")
-stagePortal = require("stageportal")
 
 local server = ""
 local slot = ""
@@ -42,6 +41,10 @@ local unlockedStages = {1, 6}
 local lastStage = -1
 local portalSpawned = false
 local portalToggle = false
+
+local portalStages = nil
+local stageIndex = 1
+local player = nil
 
 -----------------------------------------------------------------------
 -- AP Client Handling                                                --
@@ -263,9 +266,6 @@ callback.register("onLoad", function(item)
                 pickupStepOveride = i
             end
 
-        elseif string.find(flag, "ap_portals") then
-            portalToggle = true
-
         elseif string.find(flag, "ap_deathlink") then
             deathLink = true
         end
@@ -360,90 +360,33 @@ callback.register("onStep", function()
         end
     end
 
-    -- Stage Portals
+    -- Map Selection
     local teleInst = Object.find("Teleporter"):find(1)
 
-    if teleInst ~= nil and teleInst:get("active") == 3 and not portalSpawned and portalToggle then
+    if teleInst ~= nil and teleInst:get("active") == 3 then
         local nextStages = skipStage(getStageProg(Stage.getCurrentStage()))
-        local offset = 0
+        portalStages = nextStages
+        
 
-        local portalX = 0
-        local portalY = 0
+        for _, p in ipairs(Object.find("P", "vanilla"):findAllRectangle(teleInst.x - 15, teleInst.y - 20, teleInst.x + 15, teleInst.y + 14)) do
+            player = p
 
-        local B = Object.find("B", "vanilla")
-        local BInst = B:findNearest(teleInst.x, teleInst.y)
-        local leftBound = BInst.x
-        local rightBound = BInst.x + BInst.xscale * 16
-        -- print(leftBound .. " " .. rightBound)
-
-        if teleInst.x - 65 > leftBound then
-            print("Left Good")
-            portalX = teleInst.x - 65
-            portalY = BInst.y - 24
-        elseif teleInst.y + 65 < rightBound then
-            print("Right Good")
-            portalX = teleInst.x + 65
-            portalY = BInst.y +- 24
-        else
-            local newBInst = B:findNearest(leftBound - 100, BInst.y)
-
-            if newBInst ~= BInst then
-                print("Left nearby B good")
-                portalX = newBInst.x + newBInst.xscale * 16 - 10
-                portalY = newBInst.y +- 24
-            else
-                portalY = BInst.y + 500
-            end
-
-            while portalX == 0 do
-                local newBInst = B:findNearest(leftBound - 100, portalY)
-
-                if newBInst ~= BInst then 
-                    print("Left scan B good")
-                    portalX = newBInst.x + newBInst.xscale * 16 - 10
-                    portalY = BInst.y - 24
-                end
-
-                portalY = portalY - 100
-
-                if portalY < 0 then
-                    break
-                end
-            end
-
-            if portalX == 0 then
-                local newBInst = B:findNearest(leftBound + 100, BInst.y)
-
-                if newBInst ~= BInst then
-                    print("Right nearby B good")
-                    portalX = newBInst.x + 10
-                    portalY = newBInst.y - 24
+            if player:isValid() and player:control("up") == input.PRESSED then
+                stageIndex = math.fmod(stageIndex + 1, #portalStages + 1)
+                if stageIndex > 0 then
+                    player:getData().overrideStage = portalStages[stageIndex]
                 else
-                    portalY = BInst.y + 500
+                    player:getData().overrideStage = nil
                 end
-
-                while portalX == 0 do
-                    local newBInst = B:findNearest(leftBound - 100, portalY)
-
-                    if newBInst ~= BInst then 
-                        print("Left scan B good")
-                        portalX = newBInst.x + 10
-                        portalY = BInst.y - 24
-                    end
-
-                    portalY = portalY - 100
-
-                    if portalY < 0 then
-                        break
-                    end
+            elseif player:isValid() and player:control("down") == input.PRESSED then
+                stageIndex = math.abs(math.fmod(stageIndex - 1, #portalStages + 1))
+                if stageIndex > 0 then
+                    player:getData().overrideStage = portalStages[stageIndex]
+                else
+                    player:getData().overrideStage = nil
                 end
             end
         end
-
-        portalStages = nextStages
-        portal = stagePortal:create(portalX, portalY)   
-
-        portalSpawned = true
     end
 end)
 
@@ -631,6 +574,36 @@ function mapColor(map)
     end
 end
 
+-- Print Teleporter warp text
+callback.register("onDraw", function()
+    local teleInst = Object.find("Teleporter"):find(1)
+    if teleInst ~= nil and teleInst:get("active") == 3 and Object.find("P", "vanilla"):findRectangle(teleInst.x - 15, teleInst.y - 20, teleInst.x + 15, teleInst.y + 14) and player ~= nil then
+        local upKeyStr = "Up"
+        local downKeyStr = "Down"
+        if player and player:isValid() then
+            upKeyStr = input.getControlString("up", player)
+            downKeyStr = input.getControlString("down", player)
+        end
+
+        local name = "Random Stage"
+        if stageIndex > 0 then
+            name = portalStages[stageIndex]:getName()
+        end
+        local text = ""
+        local pp = not net.online or player == net.localPlayer
+        if input.getPlayerGamepad(player) and pp then
+            text = "Press '" .. upKeyStr .. "'/'" .. downKeyStr .. "' to change destination"
+        else
+            text = "Press '" .. "&y&" .. upKeyStr .. "'&!&" .. "/" .. "&y&'" .. downKeyStr .. "'&!&" .. " to change destination"
+        end
+
+        graphics.color(Color.WHITE)
+        graphics.alpha(1)
+        graphics.printColor("Current Destination: &r&" .. name .. "&!&", teleInst.x - 100, teleInst.y + 20)
+        graphics.printColor(text, teleInst.x - 140, teleInst.y + 30)
+    end
+end)
+
 -----------------------------------------------------------------------
 -- Helper functions                                                  --
 -----------------------------------------------------------------------
@@ -769,7 +742,6 @@ function getStagesUnlocked(progression, stageProg)
             table.remove(progression, arrayContains(progression, map:getName()))
         end
     end
-    print(progression)
 
     if #progression == 0 then
         local nextProg = math.fmod(stageProg, 5) + 1
