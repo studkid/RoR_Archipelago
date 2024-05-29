@@ -44,7 +44,7 @@ local portalSpawned = false
 local portalToggle = false
 
 local portalStages = nil
-local stageIndex = 1
+local stageIndex = 0
 local player = nil
 
 -----------------------------------------------------------------------
@@ -315,7 +315,7 @@ callback.register("onPlayerStep", function(player)
     local playerData = player:getData()
     local teleporter = Object.find("Teleporter"):find(1)
 
-    if teleporter ~= nil and teleporter:get("active") == 4 then
+    if teleporter ~= nil and teleporter:get("active") == 4 and playerData.overrideStage ~= nil then
         playerData.teleport = 1
     end
     
@@ -368,9 +368,8 @@ callback.register("onStep", function()
     if teleInst ~= nil and teleInst:get("active") == 3 then
         local nextStages = skipStage(getStageProg(Stage.getCurrentStage()))
         portalStages = nextStages
-        
 
-        for _, p in ipairs(Object.find("P", "vanilla"):findAllRectangle(teleInst.x - 15, teleInst.y - 20, teleInst.x + 15, teleInst.y + 14)) do
+        for _, p in ipairs(Object.find("P", "vanilla"):findAllRectangle(teleInst.x - 25, teleInst.y - 20, teleInst.x + 25, teleInst.y + 14)) do
             player = p
 
             if player:isValid() and player:control("up") == input.PRESSED then
@@ -600,7 +599,7 @@ end)
 -- Print Teleporter warp text
 callback.register("onDraw", function()
     local teleInst = Object.find("Teleporter"):find(1)
-    if teleInst ~= nil and teleInst:get("active") == 3 and Object.find("P", "vanilla"):findRectangle(teleInst.x - 15, teleInst.y - 20, teleInst.x + 15, teleInst.y + 14) and player ~= nil then
+    if teleInst ~= nil and teleInst:get("active") == 3 and Object.find("P", "vanilla"):findRectangle(teleInst.x - 25, teleInst.y - 20, teleInst.x + 25, teleInst.y + 14) and player ~= nil then
         local upKeyStr = "Up"
         local downKeyStr = "Down"
         if player and player:isValid() then
