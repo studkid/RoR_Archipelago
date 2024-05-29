@@ -380,7 +380,7 @@ callback.register("onStep", function()
                     player:getData().overrideStage = nil
                 end
             elseif player:isValid() and player:control("down") == input.PRESSED then
-                stageIndex = math.abs(math.fmod(stageIndex - 1, #portalStages + 1))
+                stageIndex = math.fmod(stageIndex + #portalStages, #portalStages + 1)
                 if stageIndex > 0 then
                     player:getData().overrideStage = portalStages[stageIndex]
                 else
