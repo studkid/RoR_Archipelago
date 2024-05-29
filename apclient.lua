@@ -5,6 +5,7 @@ local slot = ""
 local password = ""
 local connectionMessage = "Connecting..."
 local messageQueue = {}
+local itemQueue = {}
 local initialSetup = true
 local deathLink = false
 
@@ -357,6 +358,7 @@ callback.register("onStep", function()
             table.insert(itemsCollected, item)
         else
             teleFrags = teleFrags + 1
+            table.insert(itemQueue, "Teleporter Fragment")
         end
     end
 
@@ -476,6 +478,7 @@ end)
 -----------------------------------------------------------------------
 
 local msgTimer = 500
+local itemTimer = 60
 
 -- Draw connection status
 local drawConnected = function()
@@ -573,6 +576,26 @@ function mapColor(map)
         graphics.color(Color.fromHex(0xfd0000))
     end
 end
+
+callback.register("onPlayerDrawAbove", function(player)
+    if #itemQueue > 0 then
+        graphics.color(Color.fromRGB(192, 192, 192))
+
+        if itemTimer < 16 then
+            graphics.alpha(itemTimer / 10)
+        end
+
+        graphics.print(itemQueue[1], player.x, player.y - 20 - (30 - itemTimer/2), graphics.FONT_LARGE, graphics.ALIGN_MIDDLE)
+
+        if itemTimer < 1 then
+            table.remove(itemQueue, 1)
+            itemTimer = 60
+        end
+
+        itemTimer = itemTimer - .5
+        graphics.alpha(1)
+    end
+end)
 
 -- Print Teleporter warp text
 callback.register("onDraw", function()
@@ -678,13 +701,22 @@ function giveItem(item)
         return
     end
 
+    itemSent = nil
+    itemSfx = Sound.find("pickup")
+
     -- Items
     if item.item == 250001 then -- Common Item
-        playerInst:giveItem(common:roll())
+        itemSent = common:roll()
+        playerInst:giveItem(itemSent)
+        itemSfx:play()
     elseif item.item == 250002 then -- Uncommon Item
-        playerInst:giveItem(uncommon:roll())
+        itemSent = uncommon:roll()
+        playerInst:giveItem(itemSent)
+        itemSfx:play()
     elseif item.item == 250003 then -- Rare Item
-        playerInst:giveItem(rare:roll())
+        itemSent = rare:roll()
+        playerInst:giveItem(itemSent)
+        itemSfx:play()
     elseif item.item == 250004 then -- Boss Item
         bossItem = boss:roll()
 
@@ -699,6 +731,8 @@ function giveItem(item)
     -- Fillers
     elseif item.item == 250101 then -- Money
         misc.hud:set("gold", misc.hud:get("gold") + (100 * Difficulty.getScaling(cost)))
+        local coins = Sound.find("coin")
+        coins:play()
     elseif item.item == 250102 then -- Experience
         local pAcc = playerInst:getAccessor()
         expGiven = 1000
@@ -719,6 +753,10 @@ function giveItem(item)
         playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
         playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
         playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
+    end
+
+    if itemSent ~= nil then
+        table.insert(itemQueue, itemSent:getName())
     end
 end
 
