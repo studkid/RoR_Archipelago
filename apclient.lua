@@ -611,18 +611,20 @@ callback.register("onDraw", function()
         if stageIndex > 0 then
             name = portalStages[stageIndex]:getName()
         end
+        local destText = "Current Destination: &r&" .. name .. "&!&"
         local text = ""
         local pp = not net.online or player == net.localPlayer
         if input.getPlayerGamepad(player) and pp then
             text = "Press '" .. upKeyStr .. "'/'" .. downKeyStr .. "' to change destination"
         else
-            text = "Press '" .. "&y&" .. upKeyStr .. "'&!&" .. "/" .. "&y&'" .. downKeyStr .. "'&!&" .. " to change destination"
+            text = "Press " .. "&y&'" .. upKeyStr .. "'&!&" .. "/" .. "&y&'" .. downKeyStr .. "'&!&" .. " to change destination"
         end
 
         graphics.color(Color.WHITE)
-        graphics.alpha(1)
-        graphics.printColor("Current Destination: &r&" .. name .. "&!&", teleInst.x - 100, teleInst.y + 20)
-        graphics.printColor(text, teleInst.x - 140, teleInst.y + 30)
+        graphics.printColor(destText, teleInst.x - (graphics.textWidth("Current Destination: " .. name, graphics.FONT_DEFAULT) / 2), teleInst.y + 20)
+        graphics.printColor(text, teleInst.x - (graphics.textWidth("Press '" .. upKeyStr .. "'/'" .. downKeyStr .. "' to change destination", graphics.FONT_DEFAULT) / 2), teleInst.y + 30)
+
+        
     end
 end)
 
