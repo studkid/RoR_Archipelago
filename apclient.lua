@@ -329,7 +329,7 @@ callback.register("onPlayerStep", function(player)
 		end
     end
 
-    if misc.hud:get("gold") > 0 and teleporter:get("active") == 5 then
+    if teleporter ~= nil and misc.hud:get("gold") > 0 and teleporter:get("active") == 5 then
         teleporter:set("active", 4)
     end
 end)
@@ -409,7 +409,7 @@ callback.register("onItemInit", function(itemInst)
             else 
                 pickupStep = pickupStep + 1
             end
-        elseif #mapgroup[map] ~= 0 and map ~= "Risk of Rain" then
+        elseif map ~= "Risk of Rain" and #mapgroup[map] ~= 0 then
             locationsChecked = {}
             map = Stage.getCurrentStage():getName()
 
