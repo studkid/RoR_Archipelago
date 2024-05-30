@@ -287,7 +287,7 @@ end)
 callback.register("onPlayerInit", function(playerInstance)
     playerInst = playerInstance
     local playerData = playerInstance:getData()
-    playerData.overrideStage = nil
+    playerData.overrideStage = refreshOverride()
 end)
 
 -- Give player collected items between runs
@@ -311,26 +311,29 @@ callback.register("onPlayerLevelUp", function(player)
     end
 end)
 
+-- Stage Override
 callback.register("onPlayerStep", function(player)
     local playerData = player:getData()
     local teleporter = Object.find("Teleporter"):find(1)
 
+    if teleporter ~= nil and misc.hud:get("gold") > 0 and teleporter:get("active") == 5 then
+        teleporter:set("active", 4)
+    end
+
     if teleporter ~= nil and teleporter:get("active") == 4 and playerData.overrideStage ~= nil then
         playerData.teleport = 1
-    end
-    
+    end 
+
     if playerData.teleport == 1 then
         if misc.HUD:get("gold") == 0 then
 			teleporter:set("active", 5)
 			if not Object.find("EfExp"):find(1) then
+                print(playerData.overrideStage)
+                print("teleporting")
 				Stage.transport(playerData.overrideStage)
                 playerData.teleport = 0
 			end
 		end
-    end
-
-    if teleporter ~= nil and misc.hud:get("gold") > 0 and teleporter:get("active") == 5 then
-        teleporter:set("active", 4)
     end
 end)
 
@@ -377,14 +380,14 @@ callback.register("onStep", function()
                 if stageIndex > 0 then
                     player:getData().overrideStage = portalStages[stageIndex]
                 else
-                    player:getData().overrideStage = nil
+                    refreshOverride()
                 end
             elseif player:isValid() and player:control("down") == input.PRESSED then
                 stageIndex = math.fmod(stageIndex + #portalStages, #portalStages + 1)
                 if stageIndex > 0 then
                     player:getData().overrideStage = portalStages[stageIndex]
                 else
-                    player:getData().overrideStage = nil
+                    refreshOverride()
                 end
             end
         end
@@ -776,23 +779,24 @@ end
 
 -- Checks if stages are unlocked for the given progression level
 function getStagesUnlocked(progression, stageProg)
+    local newProgression = {}
     for _, map in ipairs(progression) do
-        if arrayContains(unlockedMaps, map:getName()) == nil then
-            table.remove(progression, arrayContains(progression, map:getName()))
+        if arrayContains(unlockedMaps, map:getName()) ~= nil then
+            table.insert(newProgression, map)
         end
     end
 
-    if #progression == 0 then
+    if #newProgression == 0 then
         local nextProg = math.fmod(stageProg, 5) + 1
 
         while arrayContains(unlockedStages, nextProg) == nil do
             nextProg = math.fmod(nextProg, 5) + 1
         end
 
-        progression = getStagesUnlocked(Stage.progression[nextProg]:toTable(), nextProg)
+        newProgression = getStagesUnlocked(Stage.progression[nextProg]:toTable(), nextProg)
     end
 
-    return progression
+    return newProgression
 end
 
 function refreshOverride()
@@ -800,6 +804,7 @@ function refreshOverride()
     for _, player in ipairs(misc.players) do
         local playerData = player:getData()
         local nextStages = skipStage(getStageProg(stage))
+        print(nextStages)
         playerData.overrideStage = nextStages[math.random(#nextStages)]
     end 
 end
