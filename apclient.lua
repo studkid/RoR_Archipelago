@@ -320,7 +320,7 @@ callback.register("onPlayerStep", function(player)
         teleporter:set("active", 4)
     end
 
-    if teleporter ~= nil and teleporter:get("active") == 4 and playerData.overrideStage ~= nil then
+    if slotData ~= 0 and teleporter ~= nil and teleporter:get("active") == 4 and playerData.overrideStage ~= nil then
         playerData.teleport = 1
     end 
 
@@ -368,7 +368,7 @@ callback.register("onStep", function()
     -- Map Selection
     local teleInst = Object.find("Teleporter"):find(1)
 
-    if teleInst ~= nil and teleInst:get("active") == 3 then
+    if slotData.grouping ~= 0 and teleInst ~= nil and teleInst:get("active") == 3 then
         local nextStages = skipStage(getStageProg(Stage.getCurrentStage()))
         portalStages = nextStages
 
@@ -462,7 +462,9 @@ callback.register("onStageEntry", function()
     end
 
     -- Find next stage
-    refreshOverride()
+    if slotData.grouping ~= 0 then
+        refreshOverride()
+    end
 
     -- New Run check
     if arrayContains(unlockedMaps, stage:getName()) == nil and lastStage == -1 and slotData.grouping == 2 then
@@ -602,7 +604,7 @@ end)
 -- Print Teleporter warp text
 callback.register("onDraw", function()
     local teleInst = Object.find("Teleporter"):find(1)
-    if teleInst ~= nil and teleInst:get("active") == 3 and Object.find("P", "vanilla"):findRectangle(teleInst.x - 25, teleInst.y - 20, teleInst.x + 25, teleInst.y + 14) and player ~= nil then
+    if slotData.grouping == 2 and teleInst ~= nil and teleInst:get("active") == 3 and Object.find("P", "vanilla"):findRectangle(teleInst.x - 25, teleInst.y - 20, teleInst.x + 25, teleInst.y + 14) and player ~= nil then
         local upKeyStr = "Up"
         local downKeyStr = "Down"
         if player and player:isValid() then
@@ -626,8 +628,6 @@ callback.register("onDraw", function()
         graphics.color(Color.WHITE)
         graphics.printColor(destText, teleInst.x - (graphics.textWidth("Current Destination: " .. name, graphics.FONT_DEFAULT) / 2), teleInst.y + 20)
         graphics.printColor(text, teleInst.x - (graphics.textWidth("Press '" .. upKeyStr .. "'/'" .. downKeyStr .. "' to change destination", graphics.FONT_DEFAULT) / 2), teleInst.y + 30)
-
-        
     end
 end)
 
