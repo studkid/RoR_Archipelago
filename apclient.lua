@@ -452,6 +452,7 @@ callback.register("onStageEntry", function()
     local stage = Stage.getCurrentStage()
     local teleObj = Object.find("Teleporter", "vanilla")
     local teleInst = teleObj:find(1)
+    stageIndex = 0
     portalSpawned = false
 
     -- Lock final stage
@@ -557,8 +558,10 @@ callback.register("onPlayerHUDDraw", function(player, hudX, hudY)
                 mapColor(map:getName())
                 if mapgroup[map:getName()] ~= nil then
                     graphics.print(map:getName() .. ": " .. (slotData.totalLocations -  #mapgroup[map:getName()]) .. "/" .. slotData.totalLocations, w - 100, 10 + (10 * (i + offset)), graphics.FONT_SMALL, graphics.ALIGN_RIGHT)
-                else
+                elseif map:getName() == "Risk of Rain" then
                     graphics.print(map:getName(), w - 100, 10 + (10 * (i + offset)), graphics.FONT_SMALL, graphics.ALIGN_RIGHT)
+                else
+                    offset = offset - 1
                 end
             end
         end
