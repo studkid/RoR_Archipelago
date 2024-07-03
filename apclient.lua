@@ -39,6 +39,7 @@ local teleFrags = 0
 
 local unlockedMaps = {}
 local unlockedStages = {1, 6}
+local progStage = 2
 local lastStage = -1
 local portalSpawned = false
 local portalToggle = false
@@ -70,7 +71,7 @@ function connect(server, slot, password)
 
     function on_room_info()
         print("Room info")
-        ap:ConnectSlot(slot, password, items_handling, {"Lua-APClientPP"}, {0, 4, 4})
+        ap:ConnectSlot(slot, password, items_handling, {"Lua-APClientPP"}, {0, 5, 0})
     end
 
     function on_slot_connected(data)
@@ -123,6 +124,9 @@ function connect(server, slot, password)
                     table.insert(unlockedStages, 4)
                 elseif item.item == 250305 then
                     table.insert(unlockedStages, 5)
+                elseif item.item == 250306 then
+                    table.insert(unlockedStages, progStage)
+                    progStage = progStage + 1
                 end
                 if runStarted == true then
                     refreshOverride()
