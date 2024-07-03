@@ -78,6 +78,7 @@ function connect(server, slot, password)
         print("Slot connected")
         connectionMessage = "&g&Socket connected!&!&"
         slotData = data
+        print(slotData)
         
         curPlayerSlot = ap:get_player_number()
         connected = true
@@ -460,7 +461,7 @@ callback.register("onStageEntry", function()
     portalSpawned = false
 
     -- Lock final stage
-    if teleInst ~= nil and slotData.requiredFrags <= teleFrags and arrayContains(unlockedMaps, "Risk of Rain") ~= nil then
+    if teleInst ~= nil and slotData.requiredFrags <= teleFrags and arrayContains(unlockedMaps, "Risk of Rain") ~= nil and (slotData.StageFiveTP == 0 or getStageProg(Stage.getCurrentStage()) == 5)  then
         teleInst:set("epic", 1)
     elseif teleInst ~= nil then
         teleInst:set("epic", 0)
@@ -794,13 +795,17 @@ function getStagesUnlocked(progression, stageProg)
     end
 
     if #newProgression == 0 then
-        local nextProg = math.fmod(stageProg, 5) + 1
+        if slotData.StrictStageProg == 0 then
+            local nextProg = math.fmod(stageProg, 5) + 1
 
-        while arrayContains(unlockedStages, nextProg) == nil do
-            nextProg = math.fmod(nextProg, 5) + 1
+            while arrayContains(unlockedStages, nextProg) == nil do
+                nextProg = math.fmod(nextProg, 5) + 1
+            end
+
+            newProgression = getStagesUnlocked(Stage.progression[nextProg]:toTable(), nextProg)
+        else
+            newProgression = getStagesUnlocked(Stage.progression[stageProg]:toTable(), stageProg)
         end
-
-        newProgression = getStagesUnlocked(Stage.progression[nextProg]:toTable(), nextProg)
     end
 
     return newProgression
