@@ -78,7 +78,6 @@ function connect(server, slot, password)
         print("Slot connected")
         connectionMessage = "&g&Socket connected!&!&"
         slotData = data
-        print(slotData)
         
         curPlayerSlot = ap:get_player_number()
         connected = true
@@ -755,8 +754,8 @@ function giveItem(item)
 
     -- Traps
     elseif item.item == 250201 then -- Time Warp
-        misc.hud:set("minute", misc.hud:get("minute") + 2)
-        misc.director:set("enemy_buff", misc.director:get("enemy_buff") + (Difficulty.getActive().scale * 2))
+        misc.hud:set("minute", misc.hud:get("minute") + 1)
+        misc.director:set("enemy_buff", misc.director:get("enemy_buff") + (Difficulty.getActive().scale * 1))
     elseif item.item == 250202 and runStarted then -- Combat
         combatQueue = combatQueue + 5
     elseif item.item == 250203 and runStarted then -- Meteor
@@ -775,7 +774,6 @@ end
 -- Skips current stage to next unlocked stage
 function skipStage(stageProg)
     local nextProg = math.fmod(stageProg, 5) + 1
-
 
     while arrayContains(unlockedStages, nextProg) == nil do
         nextProg = math.fmod(nextProg, 5) + 1
@@ -804,7 +802,7 @@ function getStagesUnlocked(progression, stageProg)
 
             newProgression = getStagesUnlocked(Stage.progression[nextProg]:toTable(), nextProg)
         else
-            newProgression = getStagesUnlocked(Stage.progression[stageProg]:toTable(), stageProg)
+            newProgression = getStagesUnlocked(Stage.progression[1]:toTable(), stageProg)
         end
     end
 
