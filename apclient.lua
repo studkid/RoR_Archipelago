@@ -332,8 +332,6 @@ callback.register("onPlayerStep", function(player)
         if misc.HUD:get("gold") == 0 then
 			teleporter:set("active", 5)
 			if not Object.find("EfExp"):find(1) then
-                print(playerData.overrideStage)
-                print("teleporting")
 				Stage.transport(playerData.overrideStage)
                 playerData.teleport = 0
 			end
@@ -378,15 +376,20 @@ callback.register("onStep", function()
 
         for _, p in ipairs(Object.find("P", "vanilla"):findAllRectangle(teleInst.x - 25, teleInst.y - 20, teleInst.x + 25, teleInst.y + 14)) do
             player = p
+            playerData = player:getData()
 
-            if player:isValid() and player:control("up") == input.PRESSED then
+            if player:isValid() and player:get("ropeUp") == 0 and player:get("ropeDown") == 0 then
+                playerData.buttonHeld = 0
+            elseif player:isValid() and player:get("ropeUp") == 1 and playerData.buttonHeld == 0 then
+                playerData.buttonHeld = 1
                 stageIndex = math.fmod(stageIndex + 1, #portalStages + 1)
                 if stageIndex > 0 then
                     player:getData().overrideStage = portalStages[stageIndex]
                 else
                     refreshOverride()
                 end
-            elseif player:isValid() and player:control("down") == input.PRESSED then
+            elseif player:isValid() and player:get("ropeDown") == 1 and playerData.buttonHeld == 0 then
+                playerData.buttonHeld = 1
                 stageIndex = math.fmod(stageIndex + #portalStages, #portalStages + 1)
                 if stageIndex > 0 then
                     player:getData().overrideStage = portalStages[stageIndex]
