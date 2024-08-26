@@ -205,9 +205,7 @@ function connect(server, slot, password)
     function on_bounced(bounce)
         print("Bounced:")
         print(bounce)
-    end
-
-    function on_retrieved(map, keys, extra)
+    endap:
         print("Retrieved:")    
     end
 
@@ -217,7 +215,14 @@ function connect(server, slot, password)
 
 
     local uuid = ""
-    ap = AP(uuid, game_name, server);
+    local ran, msg = pcall(AP, uuid, game_name, server)
+    if not ran then
+        error("Connection failed\n" .. msg)
+        ap = nil
+    else
+        ap = msg
+    end
+    
 
     ap:set_socket_connected_handler(on_socket_connected)
     ap:set_socket_error_handler(on_socket_error)
@@ -277,13 +282,16 @@ callback.register("onLoad", function(item)
         
     end
     
-	connect(server, slot, password)
+    local ran, errorMsg = pcall(connect, server, slot, password)
+    if not ran then
+        error("Connection failed\n" .. errorMsg)
+    end
 end)
 
 -- Runs poll() every game tick
 callback.register("globalStep", function(room)
     if ap then
-        ap:poll() 
+        pcall(function () ap:poll() end)
     end
 end)
 
