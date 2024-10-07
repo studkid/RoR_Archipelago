@@ -78,7 +78,7 @@ function connect(server, slot, password)
 
     function on_slot_connected(data)
         print("Slot connected")
-        if debug then print(data)
+        if debug then print(data) end
         connectionMessage = "&g&Socket connected!&!&"
         slotData = data
         
@@ -286,7 +286,7 @@ callback.register("onLoad", function(item)
         
     end
 
-    if debug then print("connect(" .. server .. ", " .. slot .. ", " .. password .. ")")
+    if debug then print("connect(" .. server .. ", " .. slot .. ", " .. password .. ")") end
     
     local ran, errorMsg = pcall(connect, server, slot, password)
     if not ran then
@@ -831,7 +831,7 @@ function refreshOverride()
     for _, player in ipairs(misc.players) do
         local playerData = player:getData()
         local nextStages = skipStage(getStageProg(stage))
-        if debug then print(nextStages)
+        if debug then print(nextStages) end
         playerData.overrideStage = nextStages[math.random(#nextStages)]
     end 
 end
