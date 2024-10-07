@@ -48,6 +48,8 @@ local portalStages = nil
 local stageIndex = 0
 local player = nil
 
+local debug = false
+
 -----------------------------------------------------------------------
 -- AP Client Handling                                                --
 -----------------------------------------------------------------------
@@ -76,6 +78,7 @@ function connect(server, slot, password)
 
     function on_slot_connected(data)
         print("Slot connected")
+        if debug then print(data)
         connectionMessage = "&g&Socket connected!&!&"
         slotData = data
         
@@ -198,7 +201,7 @@ function connect(server, slot, password)
             newMsg = ap:render_json(msg, message_format):gsub("&", "and")
         end
 
-        print(newMsg)
+        print(msg)
         table.insert(messageQueue, newMsg)
     end
 
@@ -215,6 +218,7 @@ function connect(server, slot, password)
 
 
     local uuid = ""
+    print("AP(" .. uuid .. ", " .. game_name .. ", " .. server .. ")")
     local ran, msg = pcall(AP, uuid, game_name, server)
     if not ran then
         error("Connection failed\n" .. msg)
@@ -281,6 +285,8 @@ callback.register("onLoad", function(item)
         end
         
     end
+
+    if debug then print("connect(" .. server .. ", " .. slot .. ", " .. password .. ")")
     
     local ran, errorMsg = pcall(connect, server, slot, password)
     if not ran then
@@ -290,7 +296,7 @@ end)
 
 -- Runs poll() every game tick
 callback.register("globalStep", function(room)
-    if ap then
+    if ap and room:getName() ~= "Logo" and room:getName() ~= "Cutscene1" then
         pcall(function () ap:poll() end)
     end
 end)
@@ -804,7 +810,7 @@ function getStagesUnlocked(progression, stageProg)
     end
 
     if #newProgression == 0 then
-        if slotData.StrictStageProg == 0 then
+        if slotData.strictStageProg == 0 then
             local nextProg = math.fmod(stageProg, 5) + 1
 
             while arrayContains(unlockedStages, nextProg) == nil do
@@ -825,7 +831,7 @@ function refreshOverride()
     for _, player in ipairs(misc.players) do
         local playerData = player:getData()
         local nextStages = skipStage(getStageProg(stage))
-        print(nextStages)
+        if debug then print(nextStages)
         playerData.overrideStage = nextStages[math.random(#nextStages)]
     end 
 end
