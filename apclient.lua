@@ -201,7 +201,7 @@ function connect(server, slot, password)
             newMsg = ap:render_json(msg, message_format):gsub("&", "and")
         end
 
-        print(msg)
+        print(ap:render_json(msg, message_format))
         table.insert(messageQueue, newMsg)
     end
 
