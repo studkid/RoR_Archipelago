@@ -5,6 +5,7 @@ local slot = ""
 local password = ""
 local connectionMessage = "Connecting..."
 local messageQueue = {}
+local sendMsgQueue = {}
 local itemQueue = {}
 local initialSetup = true
 local deathLink = false
@@ -48,7 +49,7 @@ local portalStages = nil
 local stageIndex = 0
 local player = nil
 
-local debug = false
+local mapSetup = false
 
 -----------------------------------------------------------------------
 -- AP Client Handling                                                --
@@ -56,15 +57,18 @@ local debug = false
 function connect(server, slot, password)
     function on_socket_connected()
         print("Socket connected")
+        if debug then log("Socket connected") end
     end
 
     function on_socket_error(msg)
         print("Socket error: " .. msg)
-        connectionMessage = "&r&Socket cannot be found!&!&"
+        if debug then log("Socket error: " .. msg) end
+        connectionMessage = "&r&Socket error: " .. msg .. "&!&"
     end
 
     function on_socket_disconnected()
         print("Socket disconnected")
+        if debug then print("Socket disconnected") end
         connectionMessage = "&r&Socket disconnected!&!&"
         connected = false
         skipItemSend = true
@@ -79,7 +83,8 @@ function connect(server, slot, password)
     function on_slot_connected(data)
         print("Slot connected")
         if debug then print(data) end
-        connectionMessage = "&g&Socket connected!&!&"
+        if debug then log("Slot connecting...") end
+        connectionMessage = "&g&Slot connected!&!&"
         slotData = data
         
         curPlayerSlot = ap:get_player_number()
@@ -88,11 +93,7 @@ function connect(server, slot, password)
         if data.grouping == 0 then
             locationsMissing = ap.missing_locations
         elseif data.grouping == 2 then
-            for _, loc in ipairs(ap.missing_locations) do
-                name = ap:get_location_name(loc)
-                map = string.match(name, "(.*):")
-                table.insert(mapgroup[map], 1, loc)
-            end
+            mapSetup = true
         end
 
         if pickupStepOveride == -1 then
@@ -102,14 +103,17 @@ function connect(server, slot, password)
         if deathLink == true then
             ap:ConnectUpdate(nil, { "Lua-APClientPP", "DeathLink" })
         end
+        if debug then log("Slot connected") end
     end
 
     function on_slot_refused(reasons)
         print("Slot refused: " .. table.concat(reasons, ", "))
+        if debug then print("Slot refused: " .. table.concat(reasons, ", ")) end
         connectionMessage = "&r&Slot Refused!  Check Console!&!&"
     end
 
     function on_items_received(items)
+        if debug then print("Sending Items") end
         if(skipItemSend) then
             return
         end
@@ -163,53 +167,41 @@ function connect(server, slot, password)
 
     function on_print(msg)
         print(msg)
+        if debug then log(msg) end
         table.insert(messageQueue, msg)
     end
 
     function on_print_json(msg, extra)
         local newMsg = "" 
-
+        if debug then log(ap:render_json(msg)) end
+        print(ap:render_json(msg, message_format))
+        
         if extra["type"] == "ItemSend" then
-            for _, str in ipairs(msg) do
-                if str.type == "player_id" then -- Player ID Color
-                    local pName = ap:get_player_alias(str.text):gsub("&", "and")
-                    if str.text == curPlayerSlot then
-                        newMsg = newMsg .. "&p&"
-                    else
-                        newMsg = newMsg .. "&y&"
-                    end
-                    newMsg = newMsg .. pName .. "&!&"
-                    
-                elseif str.type == "item_id" then -- Item ID Color
-                    local itemName = ap:get_item_name(str.text):gsub("&", "and")
-                    if str.flags == 4 then
-                        newMsg = newMsg .. "&r&"
-                    elseif str.flags == 1 then
-                        newMsg = newMsg .. "&g&"
-                    else
-                        newMsg = newMsg .. "&b&"
-                    end
-                    newMsg = newMsg .. itemName .. "&!&"
-
-                elseif str.type == "location_id" then -- Location ID Color
-                    newMsg = newMsg .. "&g&" .. ap:get_location_name(str.text):gsub("&", "and")
-                else
-                    newMsg = newMsg .. str.text
-                end
-            end
+            table.insert(sendMsgQueue, msg)
         else
             newMsg = ap:render_json(msg, message_format):gsub("&", "and")
+            table.insert(messageQueue, newMsg)
         end
-
-        print(ap:render_json(msg, message_format))
-        table.insert(messageQueue, newMsg)
     end
 
     function on_bounced(bounce)
         print("Bounced:")
         print(bounce)
-    endap:
         print("Retrieved:")    
+    end
+
+    function on_retrieved(map, keys, extra)
+        print("Retrieved:")
+        -- since lua tables won't contain nil values, we can use keys array
+        for _, key in ipairs(keys) do
+            print("  " .. key .. ": " .. tostring(map[key]))
+        end
+        -- extra will include extra fields from Get
+        print("Extra:")
+        for key, value in pairs(extra) do
+            print("  " .. key .. ": " .. tostring(value))
+        end
+        -- both keys and extra are optional
     end
 
     function on_set_reply(message)
@@ -218,10 +210,9 @@ function connect(server, slot, password)
 
 
     local uuid = ""
-    print("AP(" .. uuid .. ", " .. game_name .. ", " .. server .. ")")
     local ran, msg = pcall(AP, uuid, game_name, server)
     if not ran then
-        error("Connection failed\n" .. msg)
+        log("Connection failed\n" .. msg)
         ap = nil
     else
         ap = msg
@@ -286,7 +277,8 @@ callback.register("onLoad", function(item)
         
     end
 
-    if debug then print("connect(" .. server .. ", " .. slot .. ", " .. password .. ")") end
+    if debug then log("\n##########################################\nAP Client Connecting\n##########################################\n") end
+    -- if debug then log("connect(" .. server .. ", " .. slot .. ", " .. password .. ")") end
     
     local ran, errorMsg = pcall(connect, server, slot, password)
     if not ran then
@@ -297,7 +289,17 @@ end)
 -- Runs poll() every game tick
 callback.register("globalStep", function(room)
     if ap and room:getName() ~= "Logo" and room:getName() ~= "Cutscene1" then
-        pcall(function () ap:poll() end)
+        suc, err = pcall(function () ap:poll() end)
+        if err then log("pcall: "..err) end
+    end
+
+    if mapSetup then
+        for _, loc in ipairs(ap.missing_locations) do
+            name = ap:get_location_name(loc)
+            map = string.match(name, "(.*):")
+            table.insert(mapgroup[map], 1, loc)
+        end
+        mapSetup = false
     end
 end)
 
@@ -528,6 +530,11 @@ callback.register("onPlayerHUDDraw", function(player, hudX, hudY)
     graphics.printColor(connectionMessage, 10, h-15)
 
     -- "Chat" window
+    for i, msg in ipairs(sendMsgQueue) do
+        table.insert(messageQueue, parseJson(msg))
+        table.remove(sendMsgQueue, 1)
+    end
+
     for i, msg in pairs(messageQueue) do
         if i < 6 then
             graphics.color(Color.fromRGB(192, 192, 192))
@@ -720,7 +727,39 @@ function addMessage(msg)
     else
         table.insert(messageQueue, msg)
     end
+end
 
+-- Json Parse
+function parseJson(msg)
+    newMsg = ""
+    for _, str in ipairs(msg) do
+        if str.type == "player_id" then -- Player ID Color
+            local pName = ap:get_player_alias(str.text):gsub("&", "and")
+            if str.text == curPlayerSlot then
+                newMsg = newMsg .. "&p&"
+            else
+                newMsg = newMsg .. "&y&"
+            end
+            newMsg = newMsg .. pName .. "&!&"
+            
+        elseif str.type == "item_id" then -- Item ID Color
+            local itemName = ap:get_item_name(str.text):gsub("&", "and")
+            if str.flags == 4 then
+                newMsg = newMsg .. "&r&"
+            elseif str.flags == 1 then
+                newMsg = newMsg .. "&g&"
+            else
+                newMsg = newMsg .. "&b&"
+            end
+            newMsg = newMsg .. itemName .. "&!&"
+
+        elseif str.type == "location_id" then -- Location ID Color
+            newMsg = newMsg .. "&g&" .. ap:get_location_name(str.text):gsub("&", "and")
+        else
+            newMsg = newMsg .. str.text
+        end
+    end
+    return (newMsg)
 end
 
 -- Give Item
