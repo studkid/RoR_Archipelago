@@ -487,7 +487,7 @@ callback.register("onStageEntry", function()
     portalSpawned = false
 
     -- Lock final stage
-    if teleInst ~= nil and slotData.requiredFrags <= teleFrags and (slotData.grouping ~= 0 and arrayContains(unlockedMaps, "Risk of Rain") ~= nil) and (slotData.StageFiveTP == 0 or getStageProg(Stage.getCurrentStage()) == 5)  then
+    if teleInst ~= nil and slotData.requiredFrags <= teleFrags and (slotData.grouping == 0 or arrayContains(unlockedMaps, "Risk of Rain") ~= nil) and (slotData.stageFiveTp == 0 or getStageProg(Stage.getCurrentStage()) == 5)  then
         teleInst:set("epic", 1)
     elseif teleInst ~= nil then
         teleInst:set("epic", 0)
