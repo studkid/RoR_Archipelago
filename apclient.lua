@@ -135,12 +135,12 @@ function connect(server, slot, password)
                     table.insert(unlockedStages, progStage)
                     progStage = progStage + 1
                 end
-                if runStarted == true then
+                if runStarted == true and slotData.grouping ~= 0 then
                     refreshOverride()
                 end
             else
                 table.insert(unlockedMaps, ap:get_item_name(item.item))
-                if runStarted == true then
+                if runStarted == true and slotData.grouping ~= 0 then
                     refreshOverride()
                 end
             end
@@ -305,6 +305,10 @@ end)
 
 -- Save the player instance to a local variable
 callback.register("onPlayerInit", function(playerInstance)
+    if slotData.grouping ~= 0 then
+        return
+    end
+
     playerInst = playerInstance
     local playerData = playerInstance:getData()
     playerData.overrideStage = refreshOverride()
@@ -333,6 +337,10 @@ end)
 
 -- Stage Override
 callback.register("onPlayerStep", function(player)
+    if slotData.grouping ~= 0 then
+        return
+    end
+
     local playerData = player:getData()
     local teleporter = Object.find("Teleporter"):find(1)
 
@@ -479,7 +487,7 @@ callback.register("onStageEntry", function()
     portalSpawned = false
 
     -- Lock final stage
-    if teleInst ~= nil and slotData.requiredFrags <= teleFrags and arrayContains(unlockedMaps, "Risk of Rain") ~= nil and (slotData.StageFiveTP == 0 or getStageProg(Stage.getCurrentStage()) == 5)  then
+    if teleInst ~= nil and slotData.requiredFrags <= teleFrags and (slotData.grouping ~= 0 and arrayContains(unlockedMaps, "Risk of Rain") ~= nil) and (slotData.StageFiveTP == 0 or getStageProg(Stage.getCurrentStage()) == 5)  then
         teleInst:set("epic", 1)
     elseif teleInst ~= nil then
         teleInst:set("epic", 0)
