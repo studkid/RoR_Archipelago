@@ -373,6 +373,8 @@ callback.register("onPlayerDeath", function()
 end)
 
 callback.register("onStep", function()
+    local teleInst = Object.find("Teleporter"):find(1)
+
     -- Combat Trap Handler
     if misc.director:getAlarm(1) > 1 and combatQueue > 0 then
         misc.director:setAlarm(1, 1)
@@ -388,12 +390,13 @@ callback.register("onStep", function()
         else
             teleFrags = teleFrags + 1
             table.insert(itemQueue, "Teleporter Fragment")
+            if teleInst ~= null and canEnterFinalStage() then
+                teleInst:set("epic", 1)
+            end
         end
     end
 
     -- Map Selection
-    local teleInst = Object.find("Teleporter"):find(1)
-
     if slotData.grouping ~= 0 and teleInst ~= nil and teleInst:get("active") == 3 then
         local nextStages = skipStage(getStageProg(Stage.getCurrentStage()))
         portalStages = nextStages
@@ -487,7 +490,7 @@ callback.register("onStageEntry", function()
     portalSpawned = false
 
     -- Lock final stage
-    if teleInst ~= nil and slotData.requiredFrags <= teleFrags and (slotData.grouping == 0 or arrayContains(unlockedMaps, "Risk of Rain") ~= nil) and (slotData.stageFiveTp == 0 or getStageProg(Stage.getCurrentStage()) == 5)  then
+    if teleInst ~= nil and canEnterFinalStage()  then
         teleInst:set("epic", 1)
     elseif teleInst ~= nil then
         teleInst:set("epic", 0)
@@ -683,6 +686,10 @@ function arrayContains(tab, val)
         end
     end
     return nil
+end
+
+function canEnterFinalStage()
+    return slotData.requiredFrags <= teleFrags and (slotData.grouping == 0 or arrayContains(unlockedMaps, "Risk of Rain") ~= nil) and (slotData.stageFiveTp == 0 or getStageProg(Stage.getCurrentStage()) == 5)
 end
 
 -- Registers every necessary itemPool
