@@ -336,7 +336,7 @@ end)
 
 -- Stage Override
 callback.register("onPlayerStep", function(player)
-    if slotData.grouping ~= 0 then
+    if slotData.grouping == 0 then
         return
     end
 
@@ -886,5 +886,6 @@ function refreshOverride()
         local nextStages = skipStage(getStageProg(stage))
         if debug then print(nextStages) end
         playerData.overrideStage = nextStages[math.random(#nextStages)]
+        if debug then print(playerData.overrideStage) end
     end 
 end
