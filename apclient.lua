@@ -305,13 +305,12 @@ end)
 
 -- Save the player instance to a local variable
 callback.register("onPlayerInit", function(playerInstance)
-    if slotData.grouping ~= 0 then
-        return
-    end
-
     playerInst = playerInstance
     local playerData = playerInstance:getData()
-    playerData.overrideStage = refreshOverride()
+
+    if slotData.grouping ~= 0 then
+        playerData.overrideStage = refreshOverride()
+    end
 end)
 
 -- Give player collected items between runs
