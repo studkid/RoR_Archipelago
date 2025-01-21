@@ -2,7 +2,7 @@
     "name": "Archipelago Randomizer",
     "description": "Adds support for archipelago multiworld to Risk of Rain",
 	"internalname": "APRando",
-    "version": "0.4.6",
+    "version": "0.5.0",
     "author": "studkid",
 	"mpcompat": false,
 	"options": [
@@ -25,6 +25,14 @@
             "name" : "Pickup Step Override:",
             "flag" : "ap_pickup_",
             "text" : true
+        },
+        {
+            "name" : "Deathlink:",
+            "flag" : "ap_deathlink"
+        },
+        {
+            "name" : "Rinklink:",
+            "flag" : "ap_ringlink"
         }
 	]
 }

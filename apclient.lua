@@ -7,8 +7,12 @@ local connectionMessage = "Connecting..."
 local messageQueue = {}
 local sendMsgQueue = {}
 local itemQueue = {}
+local bounceMsg = nil
 local initialSetup = true
 local deathLink = false
+local ringLink = false
+
+local lastGoldAmt = 0
 
 local itemsCollected = {}
 local itemsBuffer = {}
@@ -100,9 +104,18 @@ function connect(server, slot, password)
             pickupStepOveride = data.itemPickupStep
         end
 
+        local tags = {"Lua-APClientPP"}
+
         if deathLink == true then
-            ap:ConnectUpdate(nil, { "Lua-APClientPP", "DeathLink" })
+            table.insert(tags, "DeathLink")
         end
+
+        if ringLink == true then
+            table.insert(tags, "RingLink")
+        end
+
+        ap:ConnectUpdate(nil, tags)
+
         if debug then log("Slot connected") end
     end
 
@@ -185,9 +198,13 @@ function connect(server, slot, password)
     end
 
     function on_bounced(bounce)
-        print("Bounced:")
-        print(bounce)
-        print("Retrieved:")    
+        if debug then
+            print("Bounced:")
+            print(bounce)
+            print("Retrieved:")  
+        end
+        
+        bounceMsg = bounce
     end
 
     function on_retrieved(map, keys, extra)
@@ -273,8 +290,10 @@ callback.register("onLoad", function(item)
 
         elseif string.find(flag, "ap_deathlink") then
             deathLink = true
+
+        elseif string.find(flag, "ap_ringlink") then
+            ringLink = true
         end
-        
     end
 
     if debug then log("\n##########################################\nAP Client Connecting\n##########################################\n") end
@@ -301,6 +320,11 @@ callback.register("globalStep", function(room)
         end
         mapSetup = false
     end
+
+    -- Ignore bounce if run isn't started
+    if not runStarted and bounceMsg ~= nil then
+        bounceMsg = nil
+    end
 end)
 
 -- Save the player instance to a local variable
@@ -316,6 +340,8 @@ end)
 -- Give player collected items between runs
 callback.register("onPlayerDraw", function(playerInstance)
     if not runStarted and connected then
+        lastGoldAmt = misc.HUD:get("gold")
+
         for _, item in ipairs(itemsCollected) do 
             giveItem(item)
         end
@@ -359,6 +385,38 @@ callback.register("onPlayerStep", function(player)
                 playerData.teleport = 0
 			end
 		end
+    end
+
+    -- RingLink
+    if ringLink then
+        local curGoldAmt = misc.HUD:get("gold")
+        local goldDiff = 0
+
+        if lastGoldAmt == 0 then
+            lastGoldAmt = curGoldAmt
+        else
+            goldDiff = curGoldAmt - lastGoldAmt
+            lastGoldAmt = curGoldAmt
+        end
+
+        if goldDiff ~= 0 then
+            ap:Bounce({
+                time = os.time(),
+                source = slot,
+                amount = (goldDiff / Difficulty.getScaling(cost)) / 10 
+            }, nil, nul, {"RingLink"})
+        end
+    end
+
+    if bounceMsg ~= nil then
+        if playerInst ~= nil then
+            if arrayContains(bounceMsg["tags"], "DeathLink") then
+                handleDeathLink(bounceMsg)
+            elseif arrayContains(bounceMsg["tags"], "RingLink") then
+                handleRingLink(bounceMsg)
+            end
+        end
+        bounceMsg = nil
     end
 end)
 
@@ -888,4 +946,20 @@ function refreshOverride()
         playerData.overrideStage = nextStages[math.random(#nextStages)]
         if debug then print(playerData.overrideStage) end
     end 
+end
+
+-- DeathLink Handler
+function handleDeathLink(msg) 
+end
+
+-- RingLink Handler
+function handleRingLink(msg)
+    local amount = msg["data"]["amount"]
+    local source = msg["data"]["source"]
+    print(source .. " sending " .. amount .. " gold to " .. slot)
+
+    if source ~= slot then
+        misc.HUD:set("gold", ( misc.hud:get("gold") + (amount * Difficulty.getScaling(cost)) * 10 ))
+        lastGoldAmt = misc.HUD:get("gold")
+    end
 end

@@ -13,4 +13,4 @@ mapgroup = {
 
 stagegroup = {0, 0, 0, 0, 0}
 
-debug = false
+debug = true
