@@ -950,6 +950,17 @@ end
 
 -- DeathLink Handler
 function handleDeathLink(msg) 
+    local cause = msg["data"]["cause"]
+    local source = msg["data"]["source"]
+
+    if source ~= slot and deathLink then
+        playerInst:set("hp", -9999)
+        if cause == nil then
+            table.insert(sendMsgQueue, source .. " died")
+        else
+            table.insert(sendMsgQueue, cause)
+        end
+    end
 end
 
 -- RingLink Handler
@@ -958,7 +969,7 @@ function handleRingLink(msg)
     local source = msg["data"]["source"]
     print(source .. " sending " .. amount .. " gold to " .. slot)
 
-    if source ~= slot then
+    if source ~= slot and ringLink then
         misc.HUD:set("gold", ( misc.hud:get("gold") + (amount * Difficulty.getScaling(cost)) * 10 ))
         lastGoldAmt = misc.HUD:get("gold")
     end
