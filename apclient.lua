@@ -13,6 +13,7 @@ local deathLink = false
 local ringLink = false
 
 local lastGoldAmt = 0
+local lastGoldRem = 0
 
 local itemsCollected = {}
 local itemsBuffer = {}
@@ -395,7 +396,8 @@ callback.register("onPlayerStep", function(player)
         if lastGoldAmt == 0 then
             lastGoldAmt = curGoldAmt
         else
-            goldDiff = curGoldAmt - lastGoldAmt
+            goldDiff = math.floor(curGoldAmt - lastGoldAmt / Difficulty.getScaling(cost))
+            lastGoldRem = goldDiff / 10 % 1
             lastGoldAmt = curGoldAmt
         end
 
@@ -403,14 +405,16 @@ callback.register("onPlayerStep", function(player)
             ap:Bounce({
                 time = os.time(),
                 source = slot,
-                amount = (goldDiff / Difficulty.getScaling(cost)) / 10 
-            }, nil, nul, {"RingLink"})
+                amount = goldDiff
+            }, nil, nil, {"RingLink"})
         end
     end
 
     if bounceMsg ~= nil then
         if playerInst ~= nil then
-            if arrayContains(bounceMsg["tags"], "DeathLink") then
+            print(bounceMsg)
+            if bounceMsg ~= nil then
+            elseif arrayContains(bounceMsg["tags"], "DeathLink") then
                 handleDeathLink(bounceMsg)
             elseif arrayContains(bounceMsg["tags"], "RingLink") then
                 handleRingLink(bounceMsg)
@@ -424,6 +428,7 @@ callback.register("onPlayerDeath", function()
     if not deathLink then return end
 
     ap:Bounce({
+        time = os.time(),
         cause = slot .. " has died.",
         source = slot,
     }, nil, nil, {"DeathLink"})
@@ -956,9 +961,9 @@ function handleDeathLink(msg)
     if source ~= slot and deathLink then
         playerInst:set("hp", -9999)
         if cause == nil then
-            table.insert(sendMsgQueue, source .. " died")
+            -- table.insert(sendMsgQueue, source .. " died")
         else
-            table.insert(sendMsgQueue, cause)
+            -- table.insert(sendMsgQueue, cause)
         end
     end
 end
@@ -970,7 +975,7 @@ function handleRingLink(msg)
     print(source .. " sending " .. amount .. " gold to " .. slot)
 
     if source ~= slot and ringLink then
-        misc.HUD:set("gold", ( misc.hud:get("gold") + (amount * Difficulty.getScaling(cost)) * 10 ))
+        misc.HUD:set("gold", ( misc.hud:get("gold") + (amount * Difficulty.getScaling(cost)) ))
         lastGoldAmt = misc.HUD:get("gold")
     end
 end
