@@ -53,6 +53,7 @@ local portalToggle = false
 
 local portalStages = nil
 local stageIndex = 0
+local epicPortal = false
 local player = nil
 
 local mapSetup = false
@@ -398,7 +399,7 @@ callback.register("onPlayerStep", function(player)
             lastGoldAmt = curGoldAmt
         else
             goldDiff = curGoldAmt - lastGoldAmt
-            print("lastGoldAmt: " .. lastGoldAmt .. " curGoldAmt " .. curGoldAmt .. " goldDiff " .. goldDiff)
+            -- print("lastGoldAmt: " .. lastGoldAmt .. " curGoldAmt " .. curGoldAmt .. " goldDiff " .. goldDiff)
             lastGoldRem = goldDiff / 10 % 1
             lastGoldAmt = curGoldAmt
         end
@@ -549,6 +550,7 @@ callback.register("onGameEnd", function()
     runStarted = false
     playerInst = nil
     lastStage = -1
+    epicPortal = false
 end)
 
 -- Run stage skip for frag hunt/non universal grouping
@@ -562,6 +564,7 @@ callback.register("onStageEntry", function()
     -- Lock final stage
     if teleInst ~= nil and canEnterFinalStage()  then
         teleInst:set("epic", 1)
+        epicPortal = true
     elseif teleInst ~= nil then
         teleInst:set("epic", 0)
     end
