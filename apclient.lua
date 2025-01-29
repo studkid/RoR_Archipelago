@@ -57,6 +57,7 @@ local epicPortal = false
 local player = nil
 
 local mapSetup = false
+local mapPopulated = false
 
 -----------------------------------------------------------------------
 -- AP Client Handling                                                --
@@ -315,13 +316,14 @@ callback.register("globalStep", function(room)
         if err then log("pcall: "..err) end
     end
 
-    if mapSetup then
+    if mapSetup and not mapPopulated then
         for _, loc in ipairs(ap.missing_locations) do
             name = ap:get_location_name(loc)
             map = string.match(name, "(.*):")
             table.insert(mapgroup[map], 1, loc)
         end
         mapSetup = false
+        mapPopulated = true
     end
 
     -- Ignore bounce if run isn't started
