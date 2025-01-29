@@ -985,11 +985,11 @@ end
 function handleRingLink(msg)
     local amount = msg["data"]["amount"]
     local source = msg["data"]["source"]
-    print(source .. " sending " .. amount .. " gold to " .. slot)
+    if debug then print(source .. " sending " .. amount .. " gold to " .. slot) end
 
     if source ~= slot and ringLink then
-        newGoldAmt = misc.HUD:get("gold") + (amount * Difficulty.getScaling(cost) * 10)
-        print(newGoldAmt)
+        newGoldAmt = math.max(misc.HUD:get("gold") + (amount * Difficulty.getScaling(cost) * 10), 0)
+        if debug then print(newGoldAmt) end
         lastGoldAmt = newGoldAmt
         misc.HUD:set("gold", newGoldAmt)
     end
