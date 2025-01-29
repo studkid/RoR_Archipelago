@@ -202,9 +202,9 @@ function connect(server, slot, password)
 
     function on_bounced(bounce)
         if debug then
-            -- print("Bounced:")
-            -- print(bounce)
-            -- print("Retrieved:")  
+            print("Bounced:")
+            print(bounce)
+            print("Retrieved:")  
         end
         
         bounceMsg = bounce
@@ -434,11 +434,14 @@ end)
 callback.register("onPlayerDeath", function()
     if not deathLink then return end
 
-    if deathLinkRec then deathLinkRec = false end
+    if deathLinkRec then 
+        deathLinkRec = false 
+        return
+    end
 
     ap:Bounce({
         time = os.time(),
-        cause = slot .. " has died.",
+        cause = slot .. deathMessages[math.random(#deathMessages)],
         source = slot,
     }, nil, nil, {"DeathLink"})
 end)
@@ -974,7 +977,7 @@ function handleDeathLink(msg)
         playerInst:set("hp", -9999)
         if cause == nil then
             local death = source .. " died"
-            table.insert(sendMsgQueue, death)
+            table.insert(messageQueue, death)
         else
             table.insert(sendMsgQueue, cause)
         end
