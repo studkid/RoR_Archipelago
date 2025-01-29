@@ -646,9 +646,9 @@ callback.register("onPlayerHUDDraw", function(player, hudX, hudY)
     local stage = Stage.getCurrentStage()
 
     if slotData.grouping == 0 then
-        goalString = goalString .. (slotData.totalLocations - #locationsMissing) .. "/" .. slotData.totalLocations .. " Checks Remaining.  "
+        goalString = goalString .. #locationsMissing .. "/" .. slotData.totalLocations .. " Checks Remaining.  "
     elseif slotData.grouping == 2 and stage:getName() ~= "Risk of Rain" then
-        goalString = goalString .. (slotData.totalLocations - #mapgroup[stage:getName()]) .. "/" .. slotData.totalLocations .. " Checks Remaining.  "
+        goalString = goalString .. #mapgroup[stage:getName()] .. "/" .. slotData.totalLocations .. " Checks Remaining.  "
     end
 
     if(pickupStepOveride > 0) then
@@ -672,7 +672,7 @@ callback.register("onPlayerHUDDraw", function(player, hudX, hudY)
                 offset = offset + 1
                 mapColor(map:getName())
                 if mapgroup[map:getName()] ~= nil then
-                    graphics.print(map:getName() .. ": " .. (slotData.totalLocations -  #mapgroup[map:getName()]) .. "/" .. slotData.totalLocations, w - 100, 10 + (10 * (i + offset)), graphics.FONT_SMALL, graphics.ALIGN_RIGHT)
+                    graphics.print(map:getName() .. ": " .. #mapgroup[map:getName()] .. "/" .. slotData.totalLocations, w - 100, 10 + (10 * (i + offset)), graphics.FONT_SMALL, graphics.ALIGN_RIGHT)
                 elseif map:getName() == "Risk of Rain" then
                     graphics.print(map:getName(), w - 100, 10 + (10 * (i + offset)), graphics.FONT_SMALL, graphics.ALIGN_RIGHT)
                 else
