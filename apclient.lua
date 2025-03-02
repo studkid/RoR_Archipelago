@@ -11,6 +11,7 @@ local bounceMsg = nil
 local initialSetup = true
 local deathLink = false
 local ringLink = false
+local instanceID = os.time()
 
 local lastGoldAmt = 0
 local lastGoldRem = 0
@@ -409,7 +410,7 @@ callback.register("onPlayerStep", function(player)
         if goldDiff ~= 0 then
             ap:Bounce({
                 time = os.time(),
-                source = slot,
+                source = instanceID,
                 amount = math.ceil(goldDiff / Difficulty.getScaling(cost) / 10)
             }, nil, nil, {"RingLink"})
         end
@@ -444,7 +445,7 @@ callback.register("onPlayerDeath", function()
     ap:Bounce({
         time = os.time(),
         cause = slot .. deathMessages[math.random(#deathMessages)],
-        source = slot,
+        source = instanceID,
     }, nil, nil, {"DeathLink"})
 end)
 
@@ -517,7 +518,7 @@ callback.register("onItemInit", function(itemInst)
             if pickupStepOveride == pickupStep then
                 table.insert(locationsChecked, ap.missing_locations[1])
                 ap:LocationChecks(locationsChecked)
-                itemInst:destroy()
+                -- itemInst:destroy()
                 pickupStep = 0
             else 
                 pickupStep = pickupStep + 1
@@ -529,7 +530,7 @@ callback.register("onItemInit", function(itemInst)
             if pickupStepOveride == pickupStep then
                 table.insert(locationsChecked, table.remove(mapgroup[map]))
                 ap:LocationChecks(locationsChecked)
-                itemInst:destroy()
+                -- itemInst:destroy()
                 pickupStep = 0
             else
                 pickupStep = pickupStep + 1
@@ -974,7 +975,7 @@ function handleDeathLink(msg)
     local cause = msg["data"]["cause"]
     local source = msg["data"]["source"]
 
-    if source ~= slot and deathLink then
+    if source ~= instanceID and deathLink then
         deathLinkRec = true
         playerInst:set("hp", -9999)
         if cause == nil then
@@ -992,7 +993,7 @@ function handleRingLink(msg)
     local source = msg["data"]["source"]
     if debug then print(source .. " sending " .. amount .. " gold to " .. slot) end
 
-    if source ~= slot and ringLink then
+    if source ~= instanceID and ringLink then
         newGoldAmt = math.max(misc.HUD:get("gold") + (amount * Difficulty.getScaling(cost) * 10), 0)
         if debug then print(newGoldAmt) end
         lastGoldAmt = newGoldAmt
