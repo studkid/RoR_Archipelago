@@ -11,7 +11,6 @@ local bounceMsg = nil
 local initialSetup = true
 local deathLink = false
 local ringLink = false
-local hardRingLink = false
 local instanceID = os.time()
 
 local lastGoldAmt = 0
@@ -117,10 +116,6 @@ function connect(server, slot, password)
 
         if ringLink == true then
             table.insert(tags, "RingLink")
-        end
-
-        if hardRingLink == true then
-            table.insert(tags, "HardRingLink")
         end
 
         ap:ConnectUpdate(nil, tags)
@@ -302,9 +297,6 @@ callback.register("onLoad", function(item)
 
         elseif string.find(flag, "ap_ringlink") then
             ringLink = true
-
-        elseif string.find(flag, "ap_hardRinglink") then
-            hardRingLink = true
         end
     end
 
@@ -414,11 +406,7 @@ callback.register("onPlayerStep", function(player)
             lastGoldAmt = curGoldAmt
         end
 
-        if teleporter:get("active") == 5 then
-            tag = "HardRingLink"
-        end
-
-        if goldDiff ~= 0 and (tag ~= "HardRingLink" or hardRingLink) then
+        if goldDiff ~= 0) then
             ap:Bounce({
                 time = os.time(),
                 source = instanceID,
