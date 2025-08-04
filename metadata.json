@@ -34,5 +34,10 @@
             "name" : "Ringlink:",
             "flag" : "ap_ringlink"
         }
+        ,
+        {
+            "name" : "HardRinglink:",
+            "flag" : "ap_hardRinglink"
+        }
 	]
 }

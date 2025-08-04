@@ -11,10 +11,10 @@ local bounceMsg = nil
 local initialSetup = true
 local deathLink = false
 local ringLink = false
+local hardRingLink = false
 local instanceID = os.time()
 
 local lastGoldAmt = 0
-local lastGoldRem = 0
 local deathLinkRec = false
 
 local itemsCollected = {}
@@ -117,6 +117,10 @@ function connect(server, slot, password)
 
         if ringLink == true then
             table.insert(tags, "RingLink")
+        end
+
+        if hardRingLink == true then
+            table.insert(tags, "HardRingLink")
         end
 
         ap:ConnectUpdate(nil, tags)
@@ -298,6 +302,9 @@ callback.register("onLoad", function(item)
 
         elseif string.find(flag, "ap_ringlink") then
             ringLink = true
+
+        elseif string.find(flag, "ap_hardRinglink") then
+            hardRingLink = true
         end
     end
 
@@ -397,22 +404,26 @@ callback.register("onPlayerStep", function(player)
     if ringLink then
         local curGoldAmt = misc.HUD:get("gold")
         local goldDiff = 0
+        local tag = "RingLink"
 
         if lastGoldAmt == 0 then
             lastGoldAmt = curGoldAmt
         else
             goldDiff = curGoldAmt - lastGoldAmt
             -- print("lastGoldAmt: " .. lastGoldAmt .. " curGoldAmt " .. curGoldAmt .. " goldDiff " .. goldDiff)
-            lastGoldRem = goldDiff / 10 % 1
             lastGoldAmt = curGoldAmt
         end
 
-        if goldDiff ~= 0 then
+        if teleporter:get("active") == 5 then
+            tag = "HardRingLink"
+        end
+
+        if goldDiff ~= 0 and (tag ~= "HardRingLink" or hardRingLink) then
             ap:Bounce({
                 time = os.time(),
                 source = instanceID,
-                amount = math.ceil(goldDiff / Difficulty.getScaling(cost) / 10)
-            }, nil, nil, {"RingLink"})
+                amount = math.ceil(goldDiff / Difficulty.getScaling(cost))
+            }, nil, nil, {tag})
         end
     end
 
@@ -994,7 +1005,7 @@ function handleRingLink(msg)
     if debug then print(source .. " sending " .. amount .. " gold to " .. slot) end
 
     if source ~= instanceID and ringLink then
-        newGoldAmt = math.max(misc.HUD:get("gold") + (amount * Difficulty.getScaling(cost) * 10), 0)
+        newGoldAmt = math.max(misc.HUD:get("gold") + (amount * Difficulty.getScaling(cost)), 0)
         if debug then print(newGoldAmt) end
         lastGoldAmt = newGoldAmt
         misc.HUD:set("gold", newGoldAmt)
