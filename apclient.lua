@@ -512,6 +512,30 @@ callback.register("onStep", function()
     end
 end)
 
+-- EquipLink
+callback.register("onUseItemUse", function(player, item)
+    if not equipLink then return end
+
+    namespace = item:getOrigin()
+    if namespace == "Vanilla" then
+        namespace = "ror"
+    end
+
+    identifier = arrayContains(equipMapping[namespace], item:getName())
+    if identifier == nil then
+        if debug then print(item:getName() .. " does not have an item mapping, this will not translate to RoRR") end
+        identifier = item:getName()
+    end
+
+    ap:Bounce({
+        time = os.time(),
+        source = instanceID,
+        namespace = namespace,
+        identifier = identifier,
+        double = false
+    }, nil, nil, {"EquipLink"})
+end)
+
 -- Location checker
 -- TODO Add alternative "onItemPickup" callback when starstorm is used?
 callback.register("onItemInit", function(itemInst)
@@ -766,7 +790,7 @@ end)
 -- Checks array for value
 -- TODO Convert existing arrays to lists instead and use it's contains function instead
 function arrayContains(tab, val)
-    for i, value in ipairs(tab) do
+    for i, value in pairs(tab) do
         if value == val then
             return i
         end
@@ -1008,16 +1032,18 @@ function handleRingLink(msg)
     end
 end
 
+-- EquipLink Handler
 function handleEquipLink(msg)
     local name = msg["data"]["trap_name"]
     local source = msg["data"]["source"]
     local namespace = msg["data"]["namespace"]
     local identifier = msg["data"]["identifier"]
     local double = msg["data"]["double"]
-    print("EquipLink Sending " .. identifier)
+    if debug then print("EquipLink Sending " .. identifier) end
 
     if source ~= instanceID and equipLink then 
-        equipment = Item.find(equipMapping[namespace][identifier])
+        pcall(equipment = Item.find(equipMapping[namespace][identifier]))
+        if equipment == nil  then pcall(equipment = Item.find(identifier)) end
         if equipment ~= nil then
             playerInst:activateUseItem(true, equipment)
         else
