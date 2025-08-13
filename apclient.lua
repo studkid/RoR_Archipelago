@@ -11,6 +11,7 @@ local bounceMsg = nil
 local initialSetup = true
 local deathLink = false
 local ringLink = false
+local equipLink = false
 local instanceID = os.time()
 
 local lastGoldAmt = 0
@@ -85,7 +86,7 @@ function connect(server, slot, password)
 
     function on_room_info()
         print("Room info")
-        ap:ConnectSlot(slot, password, items_handling, {"Lua-APClientPP"}, {0, 5, 0})
+        ap:ConnectSlot(slot, password, items_handling, {}, {0, 5, 0})
     end
 
     function on_slot_connected(data)
@@ -108,7 +109,7 @@ function connect(server, slot, password)
             pickupStepOveride = data.itemPickupStep
         end
 
-        local tags = {"Lua-APClientPP"}
+        local tags = {}
 
         if deathLink == true then
             table.insert(tags, "DeathLink")
@@ -116,6 +117,10 @@ function connect(server, slot, password)
 
         if ringLink == true then
             table.insert(tags, "RingLink")
+        end
+
+        if equipLink == true then
+            table.insert(tags, "EquipLink")
         end
 
         ap:ConnectUpdate(nil, tags)
@@ -297,6 +302,9 @@ callback.register("onLoad", function(item)
 
         elseif string.find(flag, "ap_ringlink") then
             ringLink = true
+
+        elseif string.find(flag, "ap_equiplink") then
+            equipLink = true
         end
     end
 
@@ -406,7 +414,7 @@ callback.register("onPlayerStep", function(player)
             lastGoldAmt = curGoldAmt
         end
 
-        if goldDiff ~= 0) then
+        if goldDiff ~= 0 then
             ap:Bounce({
                 time = os.time(),
                 source = instanceID,
@@ -418,14 +426,14 @@ callback.register("onPlayerStep", function(player)
     if bounceMsg then
         if playerInst ~= nil then
             local tag = bounceMsg["tags"]
-            -- print(bounceMsg)
+            if debug then print(bounceMsg) end
             if tag ~= nil then
-                -- print(arrayContains(bounceMsg["tags"], "RingLink"))
                 if arrayContains(bounceMsg["tags"], "DeathLink") then
                     handleDeathLink(bounceMsg)
                 elseif arrayContains(bounceMsg["tags"], "RingLink") then
-                    -- print("RinkLink")
                     handleRingLink(bounceMsg)
+                elseif arrayContains(bounceMsg["tags"], "EquipLink") then
+                    handleEquipLink(bounceMsg)
                 end
             end
         end
@@ -997,5 +1005,24 @@ function handleRingLink(msg)
         if debug then print(newGoldAmt) end
         lastGoldAmt = newGoldAmt
         misc.HUD:set("gold", newGoldAmt)
+    end
+end
+
+function handleEquipLink(msg)
+    local name = msg["data"]["trap_name"]
+    local source = msg["data"]["source"]
+    local namespace = msg["data"]["namespace"]
+    local identifier = msg["data"]["identifier"]
+    local double = msg["data"]["double"]
+    print("EquipLink Sending " .. identifier)
+
+    if source ~= instanceID and equipLink then 
+        equipment = Item.find(equipMapping[namespace][identifier])
+        if equipment ~= nil then
+            playerInst:activateUseItem(true, equipment)
+        else
+            print("EquipLink item not found: " .. identifier .. " from " .. namespace)
+            print("If you're seeing this for a vanilla item, this is likely an error.  If this is a modded item let me know and I'll add it to the mapping!")
+        end
     end
 end

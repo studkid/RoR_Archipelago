@@ -33,6 +33,10 @@
         {
             "name" : "Ringlink:",
             "flag" : "ap_ringlink"
+        },
+        {
+            "name" : "EquipLink:",
+            "flag" : "ap_equiplink"
         }
 	]
 }
