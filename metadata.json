@@ -35,6 +35,10 @@
             "flag" : "ap_ringlink"
         },
         {
+            "name" : "TrapLink:",
+            "flag" : "ap_traplink"
+        },
+        {
             "name" : "EquipLink:",
             "flag" : "ap_equiplink"
         }

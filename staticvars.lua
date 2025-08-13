@@ -55,7 +55,7 @@ equipMapping = {
         ["rottenBrain"] = "Rotten Brain",
         ["safeguardLantern"] = "Safeguard Lantern",
         ["snowglobe"] = "Snowglobe",
-        ["explorersKey"] = "Skeleton Key",
+        ["explorersKey"] = "Exploer's Key",
         ["foreignFruit"] = "Foreign Fruit",
         ["instantMinefield"] = "Instant Minefield",
         ["jarofSouls"] = "Jar of Souls",
@@ -79,6 +79,6 @@ equipMapping = {
         ["massiveLeech"] = "Massive Leech",
         ["glowingMeteorite"] = "Glowing Meteorite",
         ["nematocystNozzle"] = "Nematocyst Nozzle",
-        ["carraraMarbleUsed"] = "Carrara Marble Used",
+        ["carraraMarbleUsed"] = "Active Carrara Marble`",
     }
 }

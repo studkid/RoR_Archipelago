@@ -12,10 +12,12 @@ local initialSetup = true
 local deathLink = false
 local ringLink = false
 local equipLink = false
+local trapLink = false
 local instanceID = os.time()
 
 local lastGoldAmt = 0
 local deathLinkRec = false
+local equipLinkRec = false
 
 local itemsCollected = {}
 local itemsBuffer = {}
@@ -39,7 +41,6 @@ local skipItemSend = false
 local slotData = nil
 
 local combatQueue = 0
-local scale = 0
 local expQueue = 0
 local pickupStep = 0
 local pickupStepOveride = -1
@@ -59,6 +60,8 @@ local player = nil
 
 local mapSetup = false
 local mapPopulated = false
+
+local slowTimer = 0
 
 -----------------------------------------------------------------------
 -- AP Client Handling                                                --
@@ -117,6 +120,10 @@ function connect(server, slot, password)
 
         if ringLink == true then
             table.insert(tags, "RingLink")
+        end
+
+        if trapLink == true then
+            table.insert(tags, "TrapLink")
         end
 
         if equipLink == true then
@@ -303,6 +310,9 @@ callback.register("onLoad", function(item)
         elseif string.find(flag, "ap_ringlink") then
             ringLink = true
 
+        elseif string.find(flag, "ap_traplink") then
+            trapLink = true
+
         elseif string.find(flag, "ap_equiplink") then
             equipLink = true
         end
@@ -432,6 +442,8 @@ callback.register("onPlayerStep", function(player)
                     handleDeathLink(bounceMsg)
                 elseif arrayContains(bounceMsg["tags"], "RingLink") then
                     handleRingLink(bounceMsg)
+                elseif arrayContains(bounceMsg["tags"], "TrapLink") then
+                    handleTrapLink(bounceMsg)
                 elseif arrayContains(bounceMsg["tags"], "EquipLink") then
                     handleEquipLink(bounceMsg)
                 end
@@ -515,6 +527,11 @@ end)
 -- EquipLink
 callback.register("onUseItemUse", function(player, item)
     if not equipLink then return end
+
+    if equipLinkRec then
+        equipLinkRec = false
+        return
+    end
 
     namespace = item:getOrigin()
     if namespace == "Vanilla" then
@@ -935,16 +952,11 @@ function giveItem(item)
 
     -- Traps
     elseif item.item == 250201 then -- Time Warp
-        misc.hud:set("minute", misc.hud:get("minute") + 1)
-        misc.director:set("enemy_buff", misc.director:get("enemy_buff") + (Difficulty.getActive().scale * 1))
+        sendTrap("Timer Trap", false)
     elseif item.item == 250202 and runStarted then -- Combat
         combatQueue = combatQueue + 5
     elseif item.item == 250203 and runStarted then -- Meteor
-        playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
-        playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
-        playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
-        playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
-        playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
+        sendTrap("Meteor Trap", false)
     end
 
     if itemSent ~= nil then
@@ -1032,6 +1044,47 @@ function handleRingLink(msg)
     end
 end
 
+-- TrapLink Handler
+function handleTrapLink(msg)
+    local name = msg["data"]["trap_name"]
+    local source = msg["data"]["source"]
+
+    if source ~= slot and trapLink then
+        if debug then print(source .. " recieving " .. name) end
+        sendTrap("Meteor Trap", true)
+    end
+end
+
+function sendTrap(trapName, linked)
+    if trapName == "Timer Trap" or trapName == "Fast Trap" then
+        misc.hud:set("minute", misc.hud:get("minute") + 1)
+        misc.director:set("enemy_buff", misc.director:get("enemy_buff") + (Difficulty.getActive().scale * 1))
+    elseif trapName == "Meteor Trap" then
+        equipLinkRec = true
+        playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
+        equipLinkRec = true
+        playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
+        equipLinkRec = true
+        playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
+        equipLinkRec = true
+        playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
+        equipLinkRec = true
+        playerInst:activateUseItem(true, Item.find("Glowing Meteorite"))
+        equipLinkRec = true
+    elseif trapName == "Damage Trap" then
+        playerInst:set("hp", playerInst:get("hp") / 50)
+    end
+    print(linked)
+
+    if trapLink and not linked then
+        ap:Bounce({
+            time = os.time(),
+            source = slot,
+            trap_name = trapName
+        }, nil, nil, {"TrapLink"})
+    end
+end
+
 -- EquipLink Handler
 function handleEquipLink(msg)
     local name = msg["data"]["trap_name"]
@@ -1042,10 +1095,15 @@ function handleEquipLink(msg)
     if debug then print("EquipLink Sending " .. identifier) end
 
     if source ~= instanceID and equipLink then 
-        pcall(equipment = Item.find(equipMapping[namespace][identifier]))
-        if equipment == nil  then pcall(equipment = Item.find(identifier)) end
-        if equipment ~= nil then
-            playerInst:activateUseItem(true, equipment)
+        pcall(function() useItem = Item.find(equipMapping[namespace][identifier]) end)
+        if useItem == nil then pcall(function() useItem = Item.find(identifier) end) end
+        if useItem ~= nil then
+            equipLinkRec = true
+            playerInst:activateUseItem(true, useItem)
+            if double then
+                equipLinkRec = true
+                playerInst:activateUseItem(true, useItem)
+            end
         else
             print("EquipLink item not found: " .. identifier .. " from " .. namespace)
             print("If you're seeing this for a vanilla item, this is likely an error.  If this is a modded item let me know and I'll add it to the mapping!")
