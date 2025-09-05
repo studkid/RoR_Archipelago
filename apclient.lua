@@ -952,7 +952,7 @@ function giveItem(item)
 
     -- Traps
     elseif item.item == 250201 then -- Time Warp
-        sendTrap("Timer Trap", false)
+        sendTrap("Time Warp Trap", false)
     elseif item.item == 250202 and runStarted then -- Combat
         combatQueue = combatQueue + 5
     elseif item.item == 250203 and runStarted then -- Meteor
@@ -1056,7 +1056,7 @@ function handleTrapLink(msg)
 end
 
 function sendTrap(trapName, linked)
-    if trapName == "Timer Trap" or trapName == "Fast Trap" then
+    if trapName == "Time Warp Trap" or trapName == "Timer Trap" or trapName == "Fast Trap" then
         misc.hud:set("minute", misc.hud:get("minute") + 1)
         misc.director:set("enemy_buff", misc.director:get("enemy_buff") + (Difficulty.getActive().scale * 1))
     elseif trapName == "Meteor Trap" then
