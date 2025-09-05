@@ -816,7 +816,7 @@ function arrayContains(tab, val)
 end
 
 function canEnterFinalStage()
-    return slotData.requiredFrags <= teleFrags and (slotData.grouping == 0 or arrayContains(unlockedMaps, "Risk of Rain") ~= nil) and (slotData.stageFiveTp == 0 or getStageProg(Stage.getCurrentStage()) == 5)
+    return slotData.requiredFrags <= teleFrags and (slotData.grouping == 0 or arrayContains(unlockedMaps, "Risk of Rain") ~= nil) and (slotData.stageFiveTp == 0 or slotData.stageFiveTp == nil or getStageProg(Stage.getCurrentStage()) == 5)
 end
 
 -- Registers every necessary itemPool
@@ -986,7 +986,7 @@ function getStagesUnlocked(progression, stageProg)
     end
 
     if #newProgression == 0 then
-        if slotData.strictStageProg == 0 then
+        if slotData.strictStageProg == 0 or slotData.strictStageProg == nil then
             local nextProg = math.fmod(stageProg, 5) + 1
 
             while arrayContains(unlockedStages, nextProg) == nil do
