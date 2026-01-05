@@ -168,7 +168,7 @@ function connect(server, slot, password)
                     refreshOverride()
                 end
             else
-                table.insert(unlockedMaps, ap:get_item_name(item.item))
+                table.insert(unlockedMaps, ap:get_item_name(item.item, ap:get_game()))
                 if runStarted == true and slotData.grouping ~= 0 then
                     refreshOverride()
                 end
@@ -336,7 +336,7 @@ callback.register("globalStep", function(room)
 
     if mapSetup and not mapPopulated then
         for _, loc in ipairs(ap.missing_locations) do
-            name = ap:get_location_name(loc)
+            name = ap:get_location_name(loc, ap:get_game())
             map = string.match(name, "(.*):")
             table.insert(mapgroup[map], 1, loc)
         end
@@ -885,7 +885,7 @@ function parseJson(msg)
             newMsg = newMsg .. pName .. "&!&"
             
         elseif str.type == "item_id" then -- Item ID Color
-            local itemName = ap:get_item_name(str.text):gsub("&", "and")
+            local itemName = ap:get_item_name(str.text, ap:get_game()):gsub("&", "and")
             if str.flags == 4 then
                 newMsg = newMsg .. "&r&"
             elseif str.flags == 1 then
@@ -896,7 +896,7 @@ function parseJson(msg)
             newMsg = newMsg .. itemName .. "&!&"
 
         elseif str.type == "location_id" then -- Location ID Color
-            newMsg = newMsg .. "&g&" .. ap:get_location_name(str.text):gsub("&", "and")
+            newMsg = newMsg .. "&g&" .. ap:get_location_name(str.text, ap:get_game()):gsub("&", "and")
         else
             newMsg = newMsg .. str.text
         end
