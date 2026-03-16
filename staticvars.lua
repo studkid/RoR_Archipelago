@@ -79,6 +79,6 @@ equipMapping = {
         ["massiveLeech"] = "Massive Leech",
         ["glowingMeteorite"] = "Glowing Meteorite",
         ["nematocystNozzle"] = "Nematocyst Nozzle",
-        ["carraraMarbleUsed"] = "Active Carrara Marble`",
+        ["carraraMarbleUsed"] = "Active Carrara Marble",
     }
 }
